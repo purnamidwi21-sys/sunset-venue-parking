@@ -98,6 +98,25 @@ th,td{padding:13px 12px;border-bottom:1px solid #e8edf3}
  .nav button{font-size:13px;padding:8px 10px}
 }
 
+/* Refined typography, fixed brand palette and tidy daily-entry controls */
+:root{--bg:#f4f7fb;--panel:#ffffff;--panel2:#edf2f8;--line:#d8e1ec;--text:#172b45;--muted:#53657d;--orange:#e88a32;--green:#16845f;--red:#c94c55}
+body{font-size:17px;line-height:1.55;color:#172b45}
+.top h1{font-size:30px;color:#172b45}
+.panel h2{font-size:20px;color:#172b45}
+.field label{font-size:15px;color:#425670}
+.card .label{font-size:14px;color:#53657d}
+.card .value{font-size:29px;color:#172b45}
+.green{color:#16845f!important}.orange{color:#b9651d!important}.red{color:#c94c55!important}
+input,select,textarea{font-size:17px;min-height:48px}
+button{font-size:16px;min-height:46px}
+.stafftag{font-size:16px;min-height:44px;padding:9px 14px}
+.stafftag input{width:18px;height:18px;min-height:0}
+.expense-row{align-items:end}
+.expense-row .remove-expense{width:auto;min-width:0;min-height:48px;height:48px;padding:0 14px;font-size:15px;line-height:1;justify-self:start;white-space:nowrap;align-self:end}
+#preview{font-size:16px;line-height:1.8;background:#fff8ed;border:1px solid #f1d5b5;color:#35465d;padding:16px 18px;border-radius:12px}
+#preview b{font-size:17px;color:#172b45}.preview-line{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 7px}.preview-dot{color:#a0adbd;margin:0 2px}.preview-count{color:#53657d;font-size:15px}
+@media(max-width:760px){.expense-row{grid-template-columns:1fr 1fr;align-items:end}.expense-row .remove-expense{grid-column:auto;justify-self:start;width:auto;min-width:0}}
+@media(max-width:600px){.preview-line{gap:3px 5px}#preview{padding:13px 12px;font-size:15px}.preview-count{font-size:14px}body{font-size:16px}.top h1{font-size:25px}.panel h2{font-size:18px}.card .value{font-size:clamp(20px,5.2vw,25px)}.field label{font-size:14px}.expense-row .remove-expense{height:48px;min-height:48px;padding:0 13px;font-size:14px}.stafftag{font-size:15px}}
 /* Layout refinements */
 #appNotice{display:none!important}.dashboard-filter{padding:12px 16px;margin-bottom:16px}.dashboard-filter .toolbar{margin:0;align-items:end}.dashboard-filter .field{min-width:155px;flex:1}.dashboard-cards{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:0 0 18px}.dashboard-cards .card{min-width:0}.dashboard-cards .card .value{font-size:clamp(19px,2vw,26px);overflow-wrap:anywhere}.date-field{max-width:230px}.expense-row .remove-expense{min-height:36px;padding:6px 11px;font-size:13px;line-height:1.1;white-space:nowrap}@media(max-width:900px){.dashboard-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:600px){.dashboard-filter{padding:12px}.dashboard-filter .toolbar{display:grid;grid-template-columns:1fr 1fr}.dashboard-filter .field{min-width:0}.dashboard-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.date-field{max-width:100%}.expense-row .remove-expense{min-height:32px;padding:5px 9px;font-size:12px}}
 </style>
@@ -124,8 +143,6 @@ th,td{padding:13px 12px;border-bottom:1px solid #e8edf3}
 <div class="card"><div class="label">TOTAL PENGELUARAN</div><div class="value" id="dExpenses">Rp0</div></div>
 <div class="card"><div class="label">NET REVENUE</div><div class="value orange" id="dNet">Rp0</div></div>
 <div class="card"><div class="label">JUMLAH HARI TERCATAT</div><div class="value" id="dDays">0</div></div>
-<div class="card"><div class="label">SUDAH DIBAYAR</div><div class="value green" id="dPaid">Rp0</div></div>
-<div class="card"><div class="label">SALDO BELUM DIBAYAR</div><div class="value orange" id="dOutstanding">Rp0</div></div>
 </div>
 <div class="grid2">
 <div class="panel"><h2>Pembagian hasil</h2><div class="shares">
@@ -149,7 +166,7 @@ th,td{padding:13px 12px;border-bottom:1px solid #e8edf3}
 </div>
 <div class="panel cost-input-panel"><div class="cost-head"><div><h3>Biaya / Pengeluaran</h3><div class="status">Masukkan setiap pengeluaran sebagai baris terpisah.</div></div><button type="button" class="secondary" id="addExpense">＋ Tambah biaya</button></div><div id="expenseRows" class="expense-rows"></div><div class="cost-total">Total biaya: <strong id="expenseTotal">Rp0</strong></div></div>
 
-<div class="field"><label>Petugas yang bertugas pada tanggal tersebut (pilih semua yang bertugas)</label><div class="stafflist" id="staffChecks"></div></div>
+<div class="field"><label>Pilih Petugas</label><div class="stafflist" id="staffChecks"></div></div>
 <div id="preview" class="notice">Isi revenue, pengeluaran, dan petugas untuk melihat simulasi pembagian hasil.</div>
 <div class="actions"><button type="submit">Simpan data harian</button><button type="button" class="secondary" id="resetForm">Reset</button></div>
 </form>
