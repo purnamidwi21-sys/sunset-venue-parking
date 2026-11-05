@@ -38,10 +38,24 @@ async function saveRecord(r){
  await loadData();
 }
 function total(a){return a.reduce((t,r)=>{let c=calc(r);t.rev+=r.revenue;t.exp+=r.expenses;t.net+=c.net;t.sun+=c.sunset;t.adat+=c.adat;t.pool+=c.pool;return t},{rev:0,exp:0,net:0,sun:0,adat:0,pool:0})}
+function staffEarnings(rows){
+ const out={};
+ rows.forEach(r=>{
+  const c=calc(r);
+  (r.staff||[]).forEach(name=>{
+   if(!out[name])out[name]={name:name,days:0,amount:0};
+   out[name].days++;
+   out[name].amount+=c.each;
+  });
+ });
+ return STAFF.filter(name=>out[name]).map(name=>out[name]);
+}
 function drawDash(){
  let p=$('dashPeriod').value,dt=today(),a=records.filter(r=>p==='all'||(p==='today'?r.date===dt:r.date.slice(0,7)===dt.slice(0,7))),t=total(a);
  $('dRevenue').textContent=money(t.rev);$('dExpenses').textContent=money(t.exp);$('dNet').textContent=money(t.net);$('dDays').textContent=a.length;
  $('dSunset').textContent=money(t.sun);$('dAdat').textContent=money(t.adat);$('dStaff').textContent=money(t.pool);
+ const perStaff=staffEarnings(a);
+ $('dashStaffEarnings').innerHTML=perStaff.length?perStaff.map(x=>'<div class="share"><span>'+esc(x.name)+'<small class="muted" style="display:block">'+x.days+' hari bertugas</small></span><b>'+money(x.amount)+'</b></div>').join(''):'<div class="empty">Belum ada petugas tercatat pada periode ini.</div>';
  $('recent').innerHTML=a.length?[...a].sort((x,y)=>y.date.localeCompare(x.date)).slice(0,5).map(r=>'<div class="share"><span>'+esc(r.date)+'<small class="muted" style="display:block">'+esc(r.staff.join(', '))+'</small></span><b>'+money(calc(r).net)+'</b></div>').join(''):'<div class="empty">Belum ada data.</div>';
 }
 function drawHistory(){
@@ -51,6 +65,8 @@ function drawReport(){
  let from=$('fromDate').value,to=$('toDate').value;report=records.filter(r=>(!from||r.date>=from)&&(!to||r.date<=to)).sort((a,b)=>a.date.localeCompare(b.date));let t=total(report);
  $('reportSummary').innerHTML=[['Revenue',t.rev],['Pengeluaran',t.exp],['Net Revenue',t.net],['Bagian Petugas',t.pool]].map(x=>'<div class="card"><div class="label">'+x[0]+'</div><div class="value">'+money(x[1])+'</div></div>').join('');
  $('reportRows').innerHTML=report.length?report.map(r=>{let c=calc(r);return'<tr><td>'+r.date+'</td><td>'+money(r.revenue)+'</td><td>'+money(r.expenses)+'</td><td>'+money(c.net)+'</td><td>'+money(c.sunset)+'</td><td>'+money(c.adat)+'</td><td>'+money(c.pool)+'</td><td>'+esc(r.staff.join(', '))+'</td></tr>'}).join(''):'<tr><td colspan="8" class="empty">Tidak ada data pada periode ini.</td></tr>';
+ let perStaff=staffEarnings(report);
+ $('reportStaffRows').innerHTML=perStaff.length?perStaff.map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+x.days+'</td><td>'+money(x.amount)+'</td></tr>').join(''):'<tr><td colspan="3" class="empty">Belum ada pembagian petugas pada periode ini.</td></tr>';
 }
 function draw(){drawDash();drawHistory();if($('reports').classList.contains('active'))drawReport()}
 function page(p){document.querySelectorAll('.section').forEach(x=>x.classList.toggle('active',x.id===p));document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('active',x.dataset.page===p));$('pageTitle').textContent=({dashboard:'Dashboard',entry:'Input Harian',reports:'Laporan',history:'Data Historis'})[p];if(p==='reports')drawReport()}
@@ -67,8 +83,14 @@ function pdf(){
  doc.text('Revenue '+money(t.rev)+' | Pengeluaran '+money(t.exp)+' | Net '+money(t.net),14,31);
  doc.text('Sunset 25% '+money(t.sun)+' | Adat 25% '+money(t.adat)+' | Petugas 50% '+money(t.pool),14,37);
  doc.autoTable({startY:44,head:[['Tanggal','Revenue','Pengeluaran','Net','Sunset 25%','Adat 25%','Petugas 50%','Petugas']],body:report.map(r=>{let c=calc(r);return[r.date,money(r.revenue),money(r.expenses),money(c.net),money(c.sunset),money(c.adat),money(c.pool),r.staff.join(', ')]}),styles:{fontSize:8}});
+ const staffTotals=staffEarnings(report);
+ if(staffTotals.length){
+  doc.addPage();
+  doc.text('Rekap pendapatan per petugas',14,16);
+  doc.autoTable({startY:23,head:[['Petugas','Hari bertugas','Total pendapatan']],body:staffTotals.map(x=>[x.name,String(x.days),money(x.amount)])});
+ }
  let duties=[];report.forEach(r=>{let c=calc(r);r.staff.forEach(n=>duties.push([r.date,n,money(c.each)]))});
- if(duties.length){doc.addPage();doc.text('Rincian bagian petugas',14,16);doc.autoTable({startY:23,head:[['Tanggal','Petugas','Bagian per orang']],body:duties})}
+ if(duties.length){doc.addPage();doc.text('Rincian bagian petugas per tanggal',14,16);doc.autoTable({startY:23,head:[['Tanggal','Petugas','Bagian per orang']],body:duties})}
  return doc;
 }
 $('runReport').onclick=drawReport;$('pdfReport').onclick=()=>{let d=pdf();if(d)d.save('Sunset-Parking-Report.pdf')};
