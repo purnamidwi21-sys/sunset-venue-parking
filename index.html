@@ -131,6 +131,20 @@ button{font-size:16px;min-height:46px}
 .dashboard-detail>.panel{min-width:0}
 @media(max-width:900px){.dashboard-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.dashboard-detail{grid-template-columns:1fr 1fr}}
 @media(max-width:650px){.dashboard-period-toolbar{grid-template-columns:1fr 1fr}.dashboard-period-toolbar .field:nth-child(3),.dashboard-period-toolbar .dash-month,.dashboard-period-toolbar .dash-year{grid-column:1/-1}.dashboard-cards{grid-template-columns:1fr;gap:10px}.dashboard-cards .card{min-height:96px;padding:16px 18px}.dashboard-cards .card .label{min-height:0}.dashboard-detail{grid-template-columns:1fr}}
+
+/* Keep the month/year selector in the far-right column when it becomes visible */
+.dashboard-period-toolbar{grid-template-columns:minmax(160px,1fr) minmax(160px,1fr) minmax(180px,.9fr) minmax(180px,.9fr)}
+.dashboard-period-toolbar>.dash-custom:nth-child(1){grid-column:1}
+.dashboard-period-toolbar>.dash-custom:nth-child(2){grid-column:2}
+.dashboard-period-toolbar>.field:nth-child(3){grid-column:3}
+.dashboard-period-toolbar>.dash-month,.dashboard-period-toolbar>.dash-year{grid-column:4}
+@media(max-width:650px){
+ .dashboard-period-toolbar{grid-template-columns:1fr 1fr}
+ .dashboard-period-toolbar>.dash-custom:nth-child(1){grid-column:1}
+ .dashboard-period-toolbar>.dash-custom:nth-child(2){grid-column:2}
+ .dashboard-period-toolbar>.field:nth-child(3){grid-column:1/-1}
+ .dashboard-period-toolbar>.dash-month,.dashboard-period-toolbar>.dash-year{grid-column:1/-1}
+}
 </style>
 </head>
 <body>
