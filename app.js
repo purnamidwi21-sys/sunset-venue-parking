@@ -3,11 +3,11 @@ const URL='https://dsvdtqypumwjevgtoghr.supabase.co';
 const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRzdmR0cXlwdW13amV2Z3RvZ2hyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM4NzczNDUsImV4cCI6MjEwOTQ1MzM0NX0.VoCbLhxttbPPKtNqKaQPC-XQaHg9q48V5vyL0eDpZko';
 const db=window.supabase.createClient(URL,KEY), STAFF=['Pak Gangga','Pak Manik','Pak Bayu','Pak Dek Putra','Pak Riki'];
 let user=null,profile=null,staffRows=[],records=[],report=[],dashRows=[],payouts=[],paymentBusy=false,realtimeChannel=null,refreshTimer=null;
-const $=id=>document.getElementById(id), money=n=>new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(n)||0);
+const $=id=>document.getElementById(id), setText=(id,value)=>{const el=$(id);if(el)el.textContent=String(value??'')}, money=n=>new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(n)||0);
 const today=()=>{let d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')};
 const admin=()=>profile?.role==='admin', esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const calc=r=>{let n=Number(r.revenue)-Number(r.expenses),p=n*.5;return{net:n,sunset:n*.25,adat:n*.25,pool:p,each:r.staff.length?p/r.staff.length:0}};
-function showLogin(s=''){$('loginScreen').style.display='grid';$('app').classList.add('hidden');$('loginMessage').textContent=s}
+function showLogin(s=''){$('loginScreen').style.display='grid';$('app').classList.add('hidden');setText('loginMessage',s)}
 async function sessionStart(){
  const {data:{session},error}=await db.auth.getSession();if(error)throw error;
  if(!session){showLogin();return}
@@ -15,7 +15,7 @@ async function sessionStart(){
  const {data:p,error:pe}=await db.from('user_profiles').select('display_name,role').eq('id',user.id).single();
  if(pe)throw pe;profile=p;
  $('loginScreen').style.display='none';$('app').classList.remove('hidden');
- $('userBadge').textContent=(p.display_name||user.email)+' · '+p.role.toUpperCase();
+ setText('userBadge',(p.display_name||user.email)+' · '+p.role.toUpperCase());
  $('importExcel').disabled=!admin();$('importExcel').title=admin()?'':'Khusus Admin';
  await loadData();draw();setupRealtime();
 }
@@ -146,8 +146,8 @@ function staffEarnings(rows){
 function dashDateRange(){const p=$('dashPreset').value,dt=today();if(p==='all')return{from:'',to:''};if(p==='thisMonth'){const m=dt.slice(0,7),last=new Date(+m.slice(0,4),+m.slice(5,7),0).getDate();return{from:m+'-01',to:m+'-'+String(last).padStart(2,'0')}}if(p==='month'){const m=$('dashMonth').value||dt.slice(0,7),last=new Date(+m.slice(0,4),+m.slice(5,7),0).getDate();return{from:m+'-01',to:m+'-'+String(last).padStart(2,'0')}}if(p==='year'){const y=$('dashYear').value||dt.slice(0,4);return{from:y+'-01-01',to:y+'-12-31'}}return{from:$('dashStart').value,to:$('dashEnd').value}}
 function syncDashFilters(){const p=$('dashPreset').value;document.querySelectorAll('.dash-custom').forEach(x=>x.classList.toggle('hidden',p!=='custom'));$('dashMonth').parentElement.classList.toggle('hidden',p!=='month');$('dashYear').parentElement.classList.toggle('hidden',p!=='year')}
 function drawDash(){const range=dashDateRange();let a=records.filter(r=>(!range.from||r.date>=range.from)&&(!range.to||r.date<=range.to)),t=total(a);dashRows=a;
- $('dRevenue').textContent=money(t.rev);$('dExpenses').textContent=money(t.exp);$('dNet').textContent=money(t.net);$('dDays').textContent=a.length;
- $('dSunset').textContent=money(t.sun);$('dAdat').textContent=money(t.adat);$('dStaff').textContent=money(t.pool);
+ setText('dRevenue',money(t.rev));setText('dExpenses',money(t.exp));setText('dNet',money(t.net));setText('dDays',a.length);
+ setText('dSunset',money(t.sun));setText('dAdat',money(t.adat));setText('dStaff',money(t.pool));
  const settlements=settlementRows(a);
  $('dashSettlementRows').innerHTML=settlements.length?settlements.map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+money(x.due)+'</td><td>'+money(x.paid)+'</td><td>'+money(Math.max(0,x.balance))+'</td><td>'+(admin()&&x.balance>0.009?'<button class="secondary" onclick="window.payParkingRecipient(\''+x.type+'\',\''+esc(x.name)+'\')">Bayar</button>':'—')+'</td></tr>').join(''):'<tr><td colspan="5" class="empty">Belum ada pembagian pada periode ini.</td></tr>';
  $('dashPayAllBtn').classList.toggle('hidden',!admin());$('dashPayAllBtn').disabled=totalBalance(a)<=0.009;
@@ -170,7 +170,7 @@ function drawReport(){let from=$('fromDate').value,to=$('toDate').value;report=r
 }
 function setupRealtime(){if(realtimeChannel)db.removeChannel(realtimeChannel);realtimeChannel=db.channel('parking-data-live').on('postgres_changes',{event:'*',schema:'public',table:'daily_records'},async()=>{await loadData();draw()}).on('postgres_changes',{event:'*',schema:'public',table:'staff_duty'},async()=>{await loadData();draw()}).on('postgres_changes',{event:'*',schema:'public',table:'expense_items'},async()=>{await loadData();draw()}).on('postgres_changes',{event:'*',schema:'public',table:'payout_payments'},async()=>{await loadData();draw()}).subscribe();if(refreshTimer)clearInterval(refreshTimer);refreshTimer=setInterval(async()=>{if(!user)return;try{await loadData();draw()}catch(e){console.warn('Auto refresh:',e.message)}},30000)}
 function draw(){drawDash();drawHistory();if($('reports').classList.contains('active'))drawReport()}
-function page(p){document.querySelectorAll('.section').forEach(x=>x.classList.toggle('active',x.id===p));document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('active',x.dataset.page===p));$('pageTitle').textContent=({dashboard:'Dashboard',entry:'Input Harian',reports:'Laporan',history:'Data Historis'})[p];if(p==='reports')drawReport()}
+function page(p){document.querySelectorAll('.section').forEach(x=>x.classList.toggle('active',x.id===p));document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('active',x.dataset.page===p));setText('pageTitle',({dashboard:'Dashboard',entry:'Input Harian',reports:'Laporan',history:'Data Historis'})[p]);if(p==='reports')drawReport()}
 document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>page(b.dataset.page));
 window.payParkingRecipient=payRecipient;
 $('dashPayAllBtn').onclick=payAllBalances;
@@ -197,7 +197,7 @@ function collectExpenseItems(){
 function collectExpenseItemsSafe(){try{return collectExpenseItems()}catch(e){return []}}
 function preview(){
  const rev=Number($('revenue').value)||0,items=collectExpenseItemsSafe(),exp=items.reduce((s,x)=>s+x.amount,0),st=chosen(),net=rev-exp,pool=net*.5;
- $('expenseTotal').textContent=money(exp);
+ setText('expenseTotal',money(exp));
  $('preview').innerHTML='<div class="preview-line"><span>Total biaya:</span> <b>'+money(exp)+'</b> <span class="preview-dot">·</span> <span>Net revenue:</span> <b>'+money(net)+'</b></div><div class="preview-line"><span>Sunset Venue 25%:</span> <b>'+money(net*.25)+'</b> <span class="preview-dot">·</span> <span>Desa Adat 25%:</span> <b>'+money(net*.25)+'</b> <span class="preview-dot">·</span> <span>Petugas 50%:</span> <b>'+money(pool)+'</b> <span class="preview-count">('+st.length+' orang'+(st.length?' · '+money(pool/st.length)+' per orang':' · pilih petugas')+')</span></div>';
 }
 $('dailyForm').addEventListener('input',preview);
@@ -237,8 +237,8 @@ $('importExcel').onclick=async()=>{
  if(!expenseItems.length&&legacyExp>0)expenseItems=[{category:'Biaya lama (belum dirinci)',amount:legacyExp,description:'Diimpor dari kolom pengeluaran total'}];
  let exp=expenseItems.reduce((s,x)=>s+x.amount,0);let names=String(o.petugas??o.staff??'').split(/[,;|]/).map(x=>x.trim()).filter(x=>STAFF.includes(x));let exists=records.some(x=>x.date===date);try{await saveRecord({date,revenue:rev,expenses:exp,expenseItems,staff:names,note:String(o.catatan??o.note??''),source:'excel_import'});if(exists)updated++;else added++}catch(e){skipped++}}
  await db.from('import_history').insert({file_name:f.name,rows_read:rows.length,rows_added:added,rows_updated:updated,rows_skipped:skipped,imported_by:user.id});
- $('importMessage').textContent='Import selesai: '+added+' baru, '+updated+' diperbarui, '+skipped+' dilewati.';draw();
- }catch(e){$('importMessage').textContent='Import gagal: '+e.message}
+ setText('importMessage','Import selesai: '+added+' baru, '+updated+' diperbarui, '+skipped+' dilewati.');draw();
+ }catch(e){setText('importMessage','Import gagal: '+e.message)}
 };
 $('exportExcel').onclick=()=>{
  let w=XLSX.utils.book_new();
@@ -251,9 +251,9 @@ $('exportExcel').onclick=()=>{
  XLSX.writeFile(w,'Sunset-Parking-Backup.xlsx')
 };
 $('dashPreset').onchange=()=>{syncDashFilters();drawDash()};$('dashStart').onchange=drawDash;$('dashEnd').onchange=drawDash;$('dashMonth').onchange=drawDash;$('dashYear').onchange=drawDash;
-$('loginForm').onsubmit=async e=>{e.preventDefault();$('loginButton').disabled=true;$('loginMessage').textContent='Sedang login...';let {error}=await db.auth.signInWithPassword({email:$('loginEmail').value.trim(),password:$('loginPassword').value});$('loginButton').disabled=false;if(error){$('loginMessage').textContent='Login gagal: '+error.message;return}try{await sessionStart()}catch(x){showLogin('Login berhasil tetapi database belum siap: '+x.message)}};
+$('loginForm').onsubmit=async e=>{e.preventDefault();$('loginButton').disabled=true;setText('loginMessage','Sedang login...');let {error}=await db.auth.signInWithPassword({email:$('loginEmail').value.trim(),password:$('loginPassword').value});$('loginButton').disabled=false;if(error){setText('loginMessage','Login gagal: '+error.message);return}try{await sessionStart()}catch(x){showLogin('Login berhasil, tetapi aplikasi belum selesai dimuat: '+x.message)}};
 $('logoutButton').onclick=async()=>{await db.auth.signOut();user=null;profile=null;showLogin('Kamu sudah logout.')};
 $('date').value=today();$('fromDate').value=today().slice(0,7)+'-01';$('toDate').value=today();$('dashStart').value=today().slice(0,7)+'-01';$('dashEnd').value=today();$('dashMonth').value=today().slice(0,7);$('dashYear').value=today().slice(0,4);syncDashFilters();addExpenseRow();preview();
 db.auth.onAuthStateChange((event)=>{if(event==='SIGNED_OUT')showLogin()});
-sessionStart().catch(e=>showLogin('Koneksi/database belum siap. Jalankan schema.sql di Supabase dahulu. Detail: '+e.message));
+sessionStart().catch(e=>showLogin('Aplikasi belum berhasil dimuat. Periksa koneksi dan setup database. Detail: '+e.message));
 })();
