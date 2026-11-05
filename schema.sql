@@ -90,16 +90,18 @@ create policy "authenticated read daily records" on public.daily_records for sel
 drop policy if exists "staff create own daily records admins all" on public.daily_records;
 create policy "staff create own daily records admins all" on public.daily_records for insert to authenticated with check(created_by=auth.uid() or public.is_admin());
 drop policy if exists "staff update own daily records admins all" on public.daily_records;
-create policy "staff update own daily records admins all" on public.daily_records for update to authenticated using(created_by=auth.uid() or public.is_admin()) with check(created_by=auth.uid() or public.is_admin());
+drop policy if exists "authenticated update daily records" on public.daily_records;
+create policy "authenticated update daily records" on public.daily_records for update to authenticated using(auth.uid() is not null) with check(auth.uid() is not null);
 drop policy if exists "admins delete daily records" on public.daily_records;
 create policy "admins delete daily records" on public.daily_records for delete to authenticated using(public.is_admin());
 
 drop policy if exists "authenticated read duty" on public.staff_duty;
 create policy "authenticated read duty" on public.staff_duty for select to authenticated using(true);
 drop policy if exists "record owner or admin manages duty" on public.staff_duty;
-create policy "record owner or admin manages duty" on public.staff_duty for all to authenticated
-using(exists(select 1 from public.daily_records d where d.id=daily_record_id and (d.created_by=auth.uid() or public.is_admin())))
-with check(exists(select 1 from public.daily_records d where d.id=daily_record_id and (d.created_by=auth.uid() or public.is_admin())));
+drop policy if exists "authenticated manages duty" on public.staff_duty;
+create policy "authenticated manages duty" on public.staff_duty for all to authenticated
+using(auth.uid() is not null)
+with check(auth.uid() is not null);
 
 drop policy if exists "admins read import history" on public.import_history;
 create policy "admins read import history" on public.import_history for select to authenticated using(public.is_admin());
