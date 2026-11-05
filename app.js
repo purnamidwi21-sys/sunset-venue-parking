@@ -164,6 +164,11 @@ function drawReport(){
  $('reportExpenseRows').innerHTML=perCategory.length?perCategory.map(x=>'<tr><td>'+esc(x.category)+'</td><td>'+money(x.amount)+'</td></tr>').join(''):'<tr><td colspan="2" class="empty">Tidak ada pengeluaran pada periode ini.</td></tr>';
  let perStaff=staffEarnings(report);
  $('reportStaffRows').innerHTML=perStaff.length?perStaff.map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+x.days+'</td><td>'+money(x.amount)+'</td></tr>').join(''):'<tr><td colspan="3" class="empty">Belum ada pembagian petugas pada periode ini.</td></tr>';
+ const dailyStaffLines=settlementLines(report).filter(x=>x.type==='staff').sort((a,b)=>a.date.localeCompare(b.date)||STAFF.indexOf(a.name)-STAFF.indexOf(b.name));
+ $('reportDailyStaffRows').innerHTML=dailyStaffLines.length?dailyStaffLines.map(x=>{
+  const status=x.balance<=0.009?'Lunas':(x.paid>0?'Belum lunas':'Belum dibayar');
+  return '<tr><td>'+esc(x.date)+'</td><td>'+esc(x.name)+'</td><td>'+money(x.due)+'</td><td>'+money(x.paid)+'</td><td>'+money(Math.max(0,x.balance))+'</td><td>'+status+'</td></tr>';
+ }).join(''):'<tr><td colspan="6" class="empty">Belum ada rincian petugas pada periode ini.</td></tr>';
  const settlements=settlementRows(report);
  const totalDue=settlements.reduce((s,x)=>s+x.due,0),totalPaid=settlements.reduce((s,x)=>s+x.paid,0),balance=totalBalance(report);
  $('reportSettlementRows').innerHTML=settlements.length?settlements.map(x=>{
@@ -247,8 +252,8 @@ function pdf(){
  }
  const categoryTotals=expenseCategoryTotals(report);
  if(categoryTotals.length){doc.addPage();doc.text('Rekap biaya per kategori',14,16);doc.autoTable({startY:23,head:[['Kategori biaya','Total periode']],body:categoryTotals.map(x=>[x.category,money(x.amount)])});}
- let duties=[];report.forEach(r=>{let c=calc(r);r.staff.forEach(n=>duties.push([r.date,n,money(c.each)]))});
- if(duties.length){doc.addPage();doc.text('Rincian bagian petugas per tanggal',14,16);doc.autoTable({startY:23,head:[['Tanggal','Petugas','Bagian per orang']],body:duties})}
+ const duties=settlementLines(report).filter(x=>x.type==='staff').sort((a,b)=>a.date.localeCompare(b.date)||STAFF.indexOf(a.name)-STAFF.indexOf(b.name)).map(x=>[x.date,x.name,money(x.due),money(x.paid),money(Math.max(0,x.balance)),x.balance<=0.009?'Lunas':(x.paid>0?'Belum lunas':'Belum dibayar')]);
+ if(duties.length){doc.addPage();doc.text('Rincian harian pendapatan petugas',14,16);doc.autoTable({startY:23,head:[['Tanggal','Petugas','Hak harian','Sudah dibayar','Saldo','Status']],body:duties,styles:{fontSize:8}})}
  return doc;
 }
 $('runReport').onclick=drawReport;$('pdfReport').onclick=()=>{let d=pdf();if(d)d.save('Sunset-Parking-Report.pdf')};
