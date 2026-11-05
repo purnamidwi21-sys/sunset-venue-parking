@@ -58,6 +58,16 @@ create table if not exists public.staff_duty (
   primary key(daily_record_id,staff_id)
 );
 
+create table if not exists public.expense_items (
+  id uuid primary key default gen_random_uuid(),
+  daily_record_id uuid not null references public.daily_records(id) on delete cascade,
+  category text not null,
+  amount numeric(14,2) not null check(amount > 0),
+  description text not null default '',
+  created_at timestamptz not null default now()
+);
+create index if not exists expense_items_daily_record_idx on public.expense_items(daily_record_id);
+
 create table if not exists public.import_history (
   id uuid primary key default gen_random_uuid(),
   file_name text not null,
@@ -73,6 +83,7 @@ alter table public.staff enable row level security;
 alter table public.user_profiles enable row level security;
 alter table public.daily_records enable row level security;
 alter table public.staff_duty enable row level security;
+alter table public.expense_items enable row level security;
 alter table public.import_history enable row level security;
 
 drop policy if exists "authenticated read staff" on public.staff;
@@ -100,6 +111,11 @@ create policy "authenticated read duty" on public.staff_duty for select to authe
 drop policy if exists "record owner or admin manages duty" on public.staff_duty;
 drop policy if exists "authenticated manages duty" on public.staff_duty;
 create policy "authenticated manages duty" on public.staff_duty for all to authenticated
+using(auth.uid() is not null)
+with check(auth.uid() is not null);
+
+drop policy if exists "authenticated manage expense items" on public.expense_items;
+create policy "authenticated manage expense items" on public.expense_items for all to authenticated
 using(auth.uid() is not null)
 with check(auth.uid() is not null);
 
