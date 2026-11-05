@@ -218,10 +218,10 @@ button{font-size:16px;min-height:46px}
  .report-period-toolbar>button:last-child{grid-column:1/-1}
  .report-staff-field{width:100%;min-width:0}
 }
-</style>
+\n.enter-action{background:#f2a94a;color:#21180f;min-height:42px;padding:10px 18px;font-weight:850;letter-spacing:.1px;box-shadow:0 2px 0 rgba(0,0,0,.18)}.enter-action:hover{filter:brightness(1.08)}.dashboard-period-toolbar .enter-action{align-self:end}@media(max-width:650px){.dashboard-period-toolbar .enter-action{width:100%}}\n</style>
 </head>
 <body>
-<div id="loginScreen" class="login-shell"><form id="loginForm" class="login-card"><div class="brand">SUNSET VENUE</div><div class="subbrand">PARKING FINANCE SYSTEM</div><h1>Login</h1><p class="muted">Masuk menggunakan akun dari administrator.</p><div class="field"><label>Email</label><input id="loginEmail" type="email" autocomplete="username" required></div><div class="field"><label>Password</label><input id="loginPassword" type="password" autocomplete="current-password" required></div><button id="loginButton" style="width:100%">Masuk</button><div id="loginMessage" class="status" style="margin-top:12px"></div></form></div>
+<div id="loginScreen" class="login-shell"><form id="loginForm" class="login-card"><div class="brand">SUNSET VENUE</div><div class="subbrand">PARKING FINANCE SYSTEM</div><h1>Login</h1><p class="muted">Masuk menggunakan akun dari administrator.</p><div class="field"><label>Email</label><input id="loginEmail" type="email" autocomplete="username" required></div><div class="field"><label>Password</label><input id="loginPassword" type="password" autocomplete="current-password" required></div><button id="loginButton" style="width:100%">↵ Enter · Masuk</button><div id="loginMessage" class="status" style="margin-top:12px"></div></form></div>
 <div id="app" class="app hidden">
 <aside class="side">
 <div class="brand">SUNSET VENUE</div><div class="subbrand">PARKING FINANCE</div>
@@ -236,7 +236,7 @@ button{font-size:16px;min-height:46px}
 <header class="top"><div><h1 id="pageTitle">Dashboard</h1><div class="muted" style="margin-top:5px">Revenue, pengeluaran & pembagian hasil parkir</div></div><div class="right"><span class="badge" id="userBadge">Online</span><button class="secondary" id="logoutButton">Logout</button></div></header>
 
 <section id="dashboard" class="section active">
-<div class="panel dashboard-filter"><div class="toolbar dashboard-period-toolbar"><div class="field dash-custom"><label>Tanggal Mulai</label><input type="date" id="dashStart"></div><div class="field dash-custom"><label>Tanggal Akhir</label><input type="date" id="dashEnd"></div><div class="field"><label>Rentang Tanggal</label><select id="dashPreset"><option value="custom">Rentang Tanggal</option><option value="month">Bulan</option><option value="year">Tahun</option><option value="all">Semua Data</option></select></div><div class="field dash-month hidden"><label>Bulan</label><input type="month" id="dashMonth"></div><div class="field dash-year hidden"><label>Tahun</label><input type="number" id="dashYear" min="2000" max="2100" step="1"></div></div></div>
+<div class="panel dashboard-filter"><div class="toolbar dashboard-period-toolbar"><div class="field dash-custom"><label>Tanggal Mulai</label><input type="date" id="dashStart"></div><div class="field dash-custom"><label>Tanggal Akhir</label><input type="date" id="dashEnd"></div><div class="field"><label>Rentang Tanggal</label><select id="dashPreset"><option value="custom">Rentang Tanggal</option><option value="month">Bulan</option><option value="year">Tahun</option><option value="all">Semua Data</option></select></div><div class="field dash-month hidden"><label>Bulan</label><input type="month" id="dashMonth"></div><div class="field dash-year hidden"><label>Tahun</label><input type="number" id="dashYear" min="2000" max="2100" step="1"></div><button type="button" class="enter-action" id="dashEnter">↵ Enter · Terapkan</button></div></div>
 <div class="cards dashboard-cards">
 <div class="card"><div class="label">TOTAL PENDAPATAN</div><div class="value green" id="dRevenue">Rp0</div></div>
 <div class="card"><div class="label">TOTAL PENGELUARAN</div><div class="value" id="dExpenses">Rp0</div></div>
@@ -267,7 +267,7 @@ button{font-size:16px;min-height:46px}
 
 <div class="field"><label>Pilih Petugas</label><div class="stafflist" id="staffChecks"></div></div>
 <div id="preview" class="notice">Isi revenue, pengeluaran, dan petugas untuk melihat simulasi pembagian hasil.</div>
-<div class="actions"><button type="submit">Simpan data harian</button><button type="button" class="secondary" id="resetForm">Reset</button></div>
+<div class="actions"><button type="submit" class="enter-action">↵ Enter · Simpan data harian</button><button type="button" class="secondary" id="resetForm">Reset</button></div>
 </form>
 </div>
 </section>
@@ -291,12 +291,12 @@ button{font-size:16px;min-height:46px}
 <h2>Import data historis dari Excel</h2>
 <p class="muted">Upload file .xlsx, .xls atau .csv. Kolom yang dikenali: <b>Tanggal</b>, <b>Revenue</b>, <b>Pengeluaran</b>, <b>Petugas</b>, <b>Catatan</b>. Nama petugas dipisahkan koma jika lebih dari satu.</p>
 <div class="field"><label>Pilih file Excel / CSV</label><input id="excelFile" type="file" accept=".xlsx,.xls,.csv"></div>
-<div class="actions"><button id="importExcel">Import data</button><button class="secondary" id="exportExcel">Download backup Excel</button></div>
+<div class="actions"><button id="importExcel" class="enter-action">↵ Enter · Import data</button><button class="secondary" id="exportExcel">Download backup Excel</button></div>
 <div id="importMessage" class="status" style="margin-top:14px"></div>
 </div>
 <div class="panel" style="margin-top:15px"><h2>Semua data tersimpan</h2><div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>Pendapatan</th><th>Total biaya</th><th>Rincian biaya</th><th>Net</th><th>Petugas</th><th>Catatan</th><th>Aksi</th></tr></thead><tbody id="historyRows"></tbody></table></div></div>
 </section>
 </main>
 </div>
-<script src="app.js?v=enter-key-20261106"></script>
+<script src="app.js?v=visible-enter-buttons-20261106"></script>
 </body></html>
