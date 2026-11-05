@@ -144,7 +144,7 @@ function staffEarnings(rows){
  return STAFF.filter(name=>out[name]).map(name=>out[name]);
 }
 function dashDateRange(){const p=$('dashPreset').value,dt=today();if(p==='all')return{from:'',to:''};if(p==='month'){const m=$('dashMonth').value||dt.slice(0,7),last=new Date(+m.slice(0,4),+m.slice(5,7),0).getDate();return{from:m+'-01',to:m+'-'+String(last).padStart(2,'0')}}if(p==='year'){const y=$('dashYear').value||dt.slice(0,4);return{from:y+'-01-01',to:y+'-12-31'}}return{from:$('dashStart').value,to:$('dashEnd').value}}
-function syncDashFilters(){const p=$('dashPreset').value;document.querySelectorAll('.dash-custom').forEach(x=>x.classList.toggle('hidden',p!=='custom'));$('dashMonth').parentElement.classList.toggle('hidden',p!=='month');$('dashYear').parentElement.classList.toggle('hidden',p!=='year')}
+function syncDashFilters(){const p=$('dashPreset').value;const custom=p==='custom';document.querySelectorAll('.dash-custom').forEach(x=>{x.classList.toggle('hidden',p==='all');const input=x.querySelector('input');if(input)input.disabled=!custom});$('dashMonth').parentElement.classList.toggle('hidden',p!=='month');$('dashYear').parentElement.classList.toggle('hidden',p!=='year');if(p==='month'||p==='year'){const r=dashDateRange();$('dashStart').value=r.from;$('dashEnd').value=r.to}}
 function drawDash(){const range=dashDateRange();let a=records.filter(r=>(!range.from||r.date>=range.from)&&(!range.to||r.date<=range.to)),t=total(a);dashRows=a;
  setText('dRevenue',money(t.rev));setText('dExpenses',money(t.exp));setText('dNet',money(t.net));
  setText('dSunset',money(t.sun));setText('dAdat',money(t.adat));setText('dStaff',money(t.pool));
