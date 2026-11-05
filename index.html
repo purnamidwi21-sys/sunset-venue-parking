@@ -151,6 +151,34 @@ button{font-size:16px;min-height:46px}
 .dashboard-period-toolbar .dash-custom input:disabled::-webkit-calendar-picker-indicator{opacity:.35}
 @media(max-width:900px){.dashboard-period-toolbar{grid-template-columns:repeat(2,minmax(0,1fr))}.dashboard-period-toolbar>.dash-custom:nth-child(1),.dashboard-period-toolbar>.dash-custom:nth-child(2),.dashboard-period-toolbar>.field:nth-child(3),.dashboard-period-toolbar>.dash-month,.dashboard-period-toolbar>.dash-year{grid-column:auto}}
 @media(max-width:650px){.dashboard-period-toolbar{grid-template-columns:1fr 1fr}.dashboard-period-toolbar>.dash-custom:nth-child(1),.dashboard-period-toolbar>.dash-custom:nth-child(2){grid-column:auto}.dashboard-period-toolbar>.field:nth-child(3),.dashboard-period-toolbar>.dash-month,.dashboard-period-toolbar>.dash-year{grid-column:1/-1}}
+
+/* Daily entry: balanced fixed columns and compact, even cards */
+#dailyForm>.formgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+#dailyForm>.formgrid>.field{min-width:0;max-width:none;margin:0}
+#dailyForm>.formgrid>.date-field{max-width:none}
+#dailyForm>.cost-input-panel{width:100%;margin:18px 0;padding:18px}
+#dailyForm .expense-row{grid-template-columns:minmax(180px,1.15fr) minmax(150px,.85fr) minmax(180px,1.2fr) auto;gap:12px;align-items:end}
+#dailyForm .expense-row>div{min-width:0}
+#dailyForm .expense-row .remove-expense{height:48px;min-height:48px;align-self:end}
+#dailyForm .stafflist{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+#dailyForm .stafftag{width:100%;min-width:0;justify-content:flex-start;border-radius:12px;padding:12px 14px;min-height:52px}
+#dailyForm .stafftag.staff-all{grid-column:1/-1;justify-content:center;background:#fff7ed;border-color:#f2d2b2;color:#854d17}
+#dailyForm .cost-total{display:flex;justify-content:space-between;align-items:center;width:100%;padding:14px 16px;margin-top:14px;background:#fff;border:1px solid #e2e8f0;border-radius:11px}
+#dailyForm .cost-total strong{font-size:20px}
+@media(max-width:900px){
+ #dailyForm .expense-row{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #dailyForm .expense-row .remove-expense{grid-column:2;justify-self:end}
+ #dailyForm .stafflist{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:600px){
+ #dailyForm>.formgrid{grid-template-columns:1fr;gap:0}
+ #dailyForm .expense-row{grid-template-columns:1fr 1fr;gap:9px}
+ #dailyForm .expense-row>div:first-child,#dailyForm .expense-row>div:nth-child(3){grid-column:1/-1}
+ #dailyForm .expense-row .remove-expense{grid-column:2;justify-self:end}
+ #dailyForm .stafflist{grid-template-columns:1fr 1fr;gap:8px}
+ #dailyForm .stafftag{min-height:48px;padding:10px}
+ #dailyForm .cost-total{padding:12px}
+}
 </style>
 </head>
 <body>
