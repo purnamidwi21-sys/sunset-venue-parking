@@ -36,6 +36,8 @@
 <div class="card"><div class="label">TOTAL PENGELUARAN</div><div class="value" id="dExpenses">Rp0</div></div>
 <div class="card"><div class="label">NET REVENUE</div><div class="value orange" id="dNet">Rp0</div></div>
 <div class="card"><div class="label">JUMLAH HARI TERCATAT</div><div class="value" id="dDays">0</div></div>
+<div class="card"><div class="label">SUDAH DIBAYAR</div><div class="value green" id="dPaid">Rp0</div></div>
+<div class="card"><div class="label">SALDO BELUM DIBAYAR</div><div class="value orange" id="dOutstanding">Rp0</div></div>
 </div>
 <div class="grid2">
 <div class="panel"><h2>Pembagian hasil</h2><div class="shares">
@@ -70,11 +72,13 @@
 <div class="toolbar">
 <div class="field"><label>Dari tanggal</label><input type="date" id="fromDate"></div>
 <div class="field"><label>Sampai tanggal</label><input type="date" id="toDate"></div>
-<button id="runReport">Tampilkan laporan</button><button class="secondary" id="pdfReport">Download PDF</button><button class="secondary" id="waReport">Kirim PDF ke WhatsApp</button>
+<div class="field"><label>Metode pembayaran</label><select id="paymentMethod"><option value="Tunai">Tunai</option><option value="Transfer Bank">Transfer Bank</option><option value="QRIS">QRIS</option></select></div><button id="runReport">Tampilkan laporan</button><button class="secondary" id="pdfReport">Download PDF</button><button class="secondary" id="waReport">Kirim PDF ke WhatsApp</button>
 </div>
 <div id="reportSummary" class="cards"></div>
 <div class="panel" style="padding:0;border:0"><div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>Revenue</th><th>Pengeluaran</th><th>Net</th><th>Sunset 25%</th><th>Adat 25%</th><th>Petugas 50%</th><th>Petugas bertugas</th></tr></thead><tbody id="reportRows"></tbody></table></div></div>
 <div class="panel" style="margin-top:15px"><h2>Total biaya per kategori</h2><div class="tablewrap"><table style="min-width:420px"><thead><tr><th>Kategori biaya</th><th>Total periode</th></tr></thead><tbody id="reportExpenseRows"></tbody></table></div></div>
+<div class="panel" style="margin-top:15px"><h2>Status pembayaran bagi hasil</h2><div id="settlementSummary" class="cards"></div><div class="toolbar"><button id="payAllBtn">Catat pembayaran semua saldo</button><span class="status">Tombol hanya untuk admin. Catat pembayaran setelah uang benar-benar diserahkan.</span></div><div class="tablewrap"><table style="min-width:720px"><thead><tr><th>Penerima</th><th>Hak bagi hasil</th><th>Sudah dibayar</th><th>Saldo tersisa</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="reportSettlementRows"></tbody></table></div></div>
+<div class="panel" style="margin-top:15px"><h2>Riwayat pembayaran</h2><div class="tablewrap"><table style="min-width:620px"><thead><tr><th>Tanggal pendapatan</th><th>Penerima</th><th>Nominal dibayar</th><th>Metode</th><th>Waktu dicatat</th></tr></thead><tbody id="reportPaymentRows"></tbody></table></div></div>
 <div class="panel" style="margin-top:15px"><h2>Rekap pendapatan masing-masing petugas</h2><div class="tablewrap"><table style="min-width:420px"><thead><tr><th>Petugas</th><th>Hari bertugas</th><th>Total pendapatan</th></tr></thead><tbody id="reportStaffRows"></tbody></table></div></div>
 </div>
 </section>
