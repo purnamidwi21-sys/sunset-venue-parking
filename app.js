@@ -235,6 +235,33 @@ $('importExcel').onclick=async()=>{
    let o={};
    Object.keys(row).forEach(k=>o[k.toLowerCase().replace(/[^a-z0-9]/g,'')]=row[k]);
    const date=dateParse(o.tanggal??o.date??o.tgl);
+   if(!date){skipped++;continue}
+   if(Object.prototype.hasOwnProperty.call(o,'kategori')){
+    const category=String(o.kategori??'').trim().toLowerCase().replace(/\\s+/g,' ');
+    const description=String(o.keterangan??'').trim();
+    const incoming=Number(String(o.pemasukan??'').replace(/[^0-9.-]/g,''))||0;
+    const outgoing=Number(String(o.pengeluaran??'').replace(/[^0-9.-]/g,''))||0;
+    if(!['biaya','pendapatan','petugas parkir','setoran'].includes(category)){skipped++;continue}
+    let rec=grouped.get(date);
+    if(!rec){rec={date,revenue:0,expenses:0,expenseItems:[],staff:[],note:'',source:'excel_import'};grouped.set(date,rec)}
+    if(category==='pendapatan'){
+     rec.revenue+=incoming;
+    }else if(category==='biaya'){
+     const amount=outgoing>0?outgoing:incoming;
+     if(amount>0)rec.expenseItems.push({category:description||'Biaya',amount,description:''});
+     else if(description)rec.note=[rec.note,'Biaya tanpa nominal: '+description].filter(Boolean).join(' | ');
+    }else if(category==='petugas parkir'){
+     const names=description.split(/[,;|]/).map(x=>x.trim()).filter(x=>STAFF.includes(x));
+     rec.staff=[...new Set([...rec.staff,...names])];
+     const unknown=description.split(/[,;|]/).map(x=>x.trim()).filter(x=>x&&!STAFF.includes(x));
+     if(unknown.length)rec.note=[rec.note,'Nama petugas tidak dikenali: '+unknown.join(', ')].filter(Boolean).join(' | ');
+    }else if(category==='setoran'){
+     if(incoming>0)rec.note=[rec.note,'Setoran masuk '+(description?description+' ':'')+money(incoming)].filter(Boolean).join(' | ');
+     if(outgoing>0)rec.note=[rec.note,'Setoran keluar '+(description?description+' ':'')+money(outgoing)].filter(Boolean).join(' | ');
+     if(incoming===0&&outgoing===0&&description)rec.note=[rec.note,'Setoran: '+description].filter(Boolean).join(' | ');
+    }
+    continue;
+   }
    const revenueCell=o.revenue??o.totalrevenue??o.pendapatan??'';
    const revenueText=String(revenueCell??'').trim();
    const rev=revenueText===''?0:Number(String(revenueCell).replace(/[^0-9.-]/g,''));
