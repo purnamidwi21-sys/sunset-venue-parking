@@ -21,7 +21,7 @@ async function sessionStart(){
 }
 async function loadData(){
  const [s,d,j,e,p]=await Promise.all([
-  db.from('staff').select('id,full_name').eq('active',true),
+  db.from('staff').select('id,full_name,active'),
   db.from('daily_records').select('*').order('record_date'),
   db.from('staff_duty').select('*'),
   db.from('expense_items').select('*').order('created_at'),
@@ -96,7 +96,7 @@ function settlementRows(rows){
   if(line.balance>0.009)map[key].items.push(line);
  });
  const order={'sunset':0,'adat':1,'staff':2};
- return Object.values(map).sort((a,b)=>(order[a.type]-order[b.type])||(STAFF.indexOf(a.name)-STAFF.indexOf(b.name)));
+ return Object.values(map).sort((a,b)=>(order[a.type]-order[b.type])||((STAFF.indexOf(a.name)<0?999:STAFF.indexOf(a.name))-(STAFF.indexOf(b.name)<0?999:STAFF.indexOf(b.name))));
 }
 function totalBalance(rows){return settlementLines(rows).reduce((s,x)=>s+Math.max(0,x.balance),0)}
 async function payRecipient(type,name){
@@ -141,7 +141,7 @@ function staffEarnings(rows){
    out[name].amount+=c.each;
   });
  });
- return STAFF.filter(name=>out[name]).map(name=>out[name]);
+ return Object.keys(out).sort((a,b)=>{const ai=STAFF.indexOf(a),bi=STAFF.indexOf(b);if(ai>=0&&bi>=0)return ai-bi;if(ai>=0)return -1;if(bi>=0)return 1;return a.localeCompare(b,'id')}).map(name=>out[name]);
 }
 function dashDateRange(){const p=$('dashPreset').value,dt=today();if(p==='all')return{from:'',to:''};if(p==='month'){const m=$('dashMonth').value||dt.slice(0,7),last=new Date(+m.slice(0,4),+m.slice(5,7),0).getDate();return{from:m+'-01',to:m+'-'+String(last).padStart(2,'0')}}if(p==='year'){const y=$('dashYear').value||dt.slice(0,4);return{from:y+'-01-01',to:y+'-12-31'}}return{from:$('dashStart').value,to:$('dashEnd').value}}
 function syncDashFilters(){const p=$('dashPreset').value;const custom=p==='custom';document.querySelectorAll('.dash-custom').forEach(x=>{x.classList.toggle('hidden',p==='all');const input=x.querySelector('input');if(input)input.disabled=!custom});$('dashMonth').parentElement.classList.toggle('hidden',p!=='month');$('dashYear').parentElement.classList.toggle('hidden',p!=='year');if(p==='month'||p==='year'){const r=dashDateRange();$('dashStart').value=r.from;$('dashEnd').value=r.to}}
@@ -161,6 +161,8 @@ function drawHistory(){
 function reportDateRange(){const p=$('reportPreset').value,dt=today();if(p==='all')return{from:'',to:''};if(p==='month'){const m=$('reportMonth').value||dt.slice(0,7),last=new Date(+m.slice(0,4),+m.slice(5,7),0).getDate();return{from:m+'-01',to:m+'-'+String(last).padStart(2,'0')}}if(p==='year'){const y=$('reportYear').value||dt.slice(0,4);return{from:y+'-01-01',to:y+'-12-31'}}return{from:$('fromDate').value,to:$('toDate').value}}
 function syncReportFilters(){const p=$('reportPreset').value;document.querySelectorAll('.report-custom').forEach(x=>{x.classList.toggle('hidden',p==='all');const input=x.querySelector('input');if(input)input.disabled=false});$('reportMonth').parentElement.classList.toggle('hidden',p!=='month');$('reportYear').parentElement.classList.toggle('hidden',p!=='year');if(p==='month'||p==='year'){const r=reportDateRange();$('fromDate').value=r.from;$('toDate').value=r.to}}
 function drawReport(){const range=reportDateRange(),from=range.from,to=range.to;report=records.filter(r=>(!from||r.date>=from)&&(!to||r.date<=to)).sort((a,b)=>a.date.localeCompare(b.date));
+  const staffNames=[...new Set([...STAFF,...records.flatMap(r=>r.staff||[])])].sort((a,b)=>{const ai=STAFF.indexOf(a),bi=STAFF.indexOf(b);if(ai>=0&&bi>=0)return ai-bi;if(ai>=0)return -1;if(bi>=0)return 1;return a.localeCompare(b,'id')});
+  const staffFilter=$('reportStaffFilter'),previousStaff=staffFilter.value;staffFilter.innerHTML='<option value="">Semua petugas</option>'+staffNames.map(n=>'<option value="'+esc(n)+'">'+esc(n)+'</option>').join('');if(staffNames.includes(previousStaff))staffFilter.value=previousStaff;
  $('reportRows').innerHTML=report.length?report.map(r=>{let c=calc(r);return'<tr><td>'+r.date+'</td><td>'+money(r.revenue)+'</td><td>'+money(r.expenses)+'</td><td>'+money(c.net)+'</td><td>'+money(c.sunset)+'</td><td>'+money(c.adat)+'</td><td>'+money(c.pool)+'</td><td>'+esc(r.staff.join(', '))+'</td></tr>'}).join(''):'<tr><td colspan="8" class="empty">Tidak ada data pada periode ini.</td></tr>';
  const selectedStaff=$('reportStaffFilter').value;
  const dailyStaffLines=report.flatMap(r=>{const c=calc(r);return(r.staff||[]).filter(n=>!selectedStaff||n===selectedStaff).map(name=>({date:r.date,name,amount:c.each}))}).sort((a,b)=>a.date.localeCompare(b.date)||STAFF.indexOf(a.name)-STAFF.indexOf(b.name));
