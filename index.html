@@ -98,6 +98,8 @@ th,td{padding:13px 12px;border-bottom:1px solid #e8edf3}
  .nav button{font-size:13px;padding:8px 10px}
 }
 
+/* Layout refinements */
+#appNotice{display:none!important}.dashboard-filter{padding:12px 16px;margin-bottom:16px}.dashboard-filter .toolbar{margin:0;align-items:end}.dashboard-filter .field{min-width:155px;flex:1}.dashboard-cards{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:0 0 18px}.dashboard-cards .card{min-width:0}.dashboard-cards .card .value{font-size:clamp(19px,2vw,26px);overflow-wrap:anywhere}.date-field{max-width:230px}.expense-row .remove-expense{min-height:36px;padding:6px 11px;font-size:13px;line-height:1.1;white-space:nowrap}@media(max-width:900px){.dashboard-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:600px){.dashboard-filter{padding:12px}.dashboard-filter .toolbar{display:grid;grid-template-columns:1fr 1fr}.dashboard-filter .field{min-width:0}.dashboard-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.date-field{max-width:100%}.expense-row .remove-expense{min-height:32px;padding:5px 9px;font-size:12px}}
 </style>
 </head>
 <body>
@@ -114,10 +116,10 @@ th,td{padding:13px 12px;border-bottom:1px solid #e8edf3}
 </aside>
 <main class="main">
 <header class="top"><div><h1 id="pageTitle">Dashboard</h1><div class="muted" style="margin-top:5px">Revenue, pengeluaran & pembagian hasil parkir</div></div><div class="right"><span class="badge" id="userBadge">Online</span><button class="secondary" id="logoutButton">Logout</button></div></header>
-<div class="notice" id="appNotice">Data tersimpan di database online.</div>
+
 <section id="dashboard" class="section active">
-<div class="toolbar"><div class="field"><label>Periode dashboard</label><select id="dashPeriod"><option value="today">Hari ini</option><option value="month">Bulan ini</option><option value="all">Semua data</option></select></div><div class="field"><label>&nbsp;</label><button class="secondary" id="refreshDash">Perbarui</button></div></div>
-<div class="cards">
+<div class="panel dashboard-filter"><div class="toolbar"><div class="field"><label>Periode</label><select id="dashPreset"><option value="thisMonth">Bulan ini</option><option value="custom">Rentang tanggal</option><option value="month">Bulan tertentu</option><option value="year">Tahun tertentu</option><option value="all">Semua data</option></select></div><div class="field dash-custom"><label>Tanggal mulai</label><input type="date" id="dashStart"></div><div class="field dash-custom"><label>Tanggal akhir</label><input type="date" id="dashEnd"></div><div class="field dash-month hidden"><label>Pilih bulan</label><input type="month" id="dashMonth"></div><div class="field dash-year hidden"><label>Pilih tahun</label><input type="number" id="dashYear" min="2000" max="2100" step="1"></div></div></div>
+<div class="cards dashboard-cards">
 <div class="card"><div class="label">TOTAL PENDAPATAN</div><div class="value green" id="dRevenue">Rp0</div></div>
 <div class="card"><div class="label">TOTAL PENGELUARAN</div><div class="value" id="dExpenses">Rp0</div></div>
 <div class="card"><div class="label">NET REVENUE</div><div class="value orange" id="dNet">Rp0</div></div>
@@ -141,11 +143,11 @@ th,td{padding:13px 12px;border-bottom:1px solid #e8edf3}
 <h2>Input pendapatan & pengeluaran harian</h2>
 <form id="dailyForm">
 <div class="formgrid">
-<div class="field"><label>Tanggal</label><input id="date" type="date" required></div>
+<div class="field date-field"><label>Tanggal</label><input id="date" type="date" required></div>
 <div class="field"><label>Total pendapatan (Rp)</label><input id="revenue" type="number" min="0" step="1" placeholder="Contoh: 1500000" required></div>
 </div>
 <div class="panel cost-input-panel"><div class="cost-head"><div><h3>Biaya / Pengeluaran</h3><div class="status">Masukkan setiap pengeluaran sebagai baris terpisah.</div></div><button type="button" class="secondary" id="addExpense">＋ Tambah biaya</button></div><div id="expenseRows" class="expense-rows"></div><div class="cost-total">Total biaya: <strong id="expenseTotal">Rp0</strong></div></div>
-<div class="field" style="margin-top:14px"><label>Catatan harian (opsional)</label><input id="note" type="text" placeholder="Catatan tambahan"></div>
+
 <div class="field"><label>Petugas yang bertugas pada tanggal tersebut (pilih semua yang bertugas)</label><div class="stafflist" id="staffChecks"></div></div>
 <div id="preview" class="notice">Isi revenue, pengeluaran, dan petugas untuk melihat simulasi pembagian hasil.</div>
 <div class="actions"><button type="submit">Simpan data harian</button><button type="button" class="secondary" id="resetForm">Reset</button></div>
@@ -158,16 +160,11 @@ th,td{padding:13px 12px;border-bottom:1px solid #e8edf3}
 <div class="toolbar">
 <div class="field"><label>Dari tanggal</label><input type="date" id="fromDate"></div>
 <div class="field"><label>Sampai tanggal</label><input type="date" id="toDate"></div>
-<div class="field"><label>Metode pembayaran</label><select id="paymentMethod"><option value="Tunai">Tunai</option><option value="Transfer Bank">Transfer Bank</option><option value="QRIS">QRIS</option></select></div><button id="runReport">Tampilkan laporan</button><button class="secondary" id="pdfReport">Download PDF</button><button class="secondary" id="waReport">Kirim PDF ke WhatsApp</button>
+<button class="secondary" id="pdfReport">Download PDF</button><button class="secondary" id="waReport">Kirim PDF ke WhatsApp</button>
 </div>
-<div id="reportSummary" class="cards"></div>
 <div class="panel" style="padding:0;border:0"><div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>Revenue</th><th>Pengeluaran</th><th>Net</th><th>Sunset 25%</th><th>Adat 25%</th><th>Petugas 50%</th><th>Petugas bertugas</th></tr></thead><tbody id="reportRows"></tbody></table></div></div>
-<div class="panel" style="margin-top:15px"><h2>Total biaya per kategori</h2><div class="tablewrap"><table style="min-width:420px"><thead><tr><th>Kategori biaya</th><th>Total periode</th></tr></thead><tbody id="reportExpenseRows"></tbody></table></div></div>
-<div class="panel" style="margin-top:15px"><h2>Status pembayaran bagi hasil</h2><div id="settlementSummary" class="cards"></div><div class="toolbar"><button id="payAllBtn">Catat pembayaran semua saldo</button><span class="status">Tombol hanya untuk admin. Catat pembayaran setelah uang benar-benar diserahkan.</span></div><div class="tablewrap"><table style="min-width:720px"><thead><tr><th>Penerima</th><th>Hak bagi hasil</th><th>Sudah dibayar</th><th>Saldo tersisa</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="reportSettlementRows"></tbody></table></div></div>
-<div class="panel" style="margin-top:15px"><h2>Riwayat pembayaran</h2><div class="tablewrap"><table style="min-width:620px"><thead><tr><th>Tanggal pendapatan</th><th>Penerima</th><th>Nominal dibayar</th><th>Metode</th><th>Waktu dicatat</th></tr></thead><tbody id="reportPaymentRows"></tbody></table></div></div>
-<div class="panel" style="margin-top:15px"><h2>Rekap pendapatan masing-masing petugas</h2><div class="tablewrap"><table style="min-width:420px"><thead><tr><th>Petugas</th><th>Hari bertugas</th><th>Total pendapatan</th></tr></thead><tbody id="reportStaffRows"></tbody></table></div></div>
 <div class="toolbar" style="margin-top:15px"><div class="field"><label>Filter petugas</label><select id="reportStaffFilter"><option value="">Semua petugas</option><option>Pak Gangga</option><option>Pak Manik</option><option>Pak Bayu</option><option>Pak Dek Putra</option><option>Pak Riki</option></select></div><span class="muted">Filter tanggal menggunakan kolom Dari tanggal dan Sampai tanggal di atas.</span></div>
-<div class="panel" style="margin-top:15px"><h2>Rincian harian per petugas parkir</h2><p class="muted">Menampilkan hak pendapatan setiap petugas pada setiap tanggal, jumlah yang sudah dibayarkan, dan saldo tersisa.</p><div class="tablewrap"><table style="min-width:760px"><thead><tr><th>Tanggal</th><th>Petugas</th><th>Hak harian</th><th>Sudah dibayar</th><th>Saldo</th><th>Status</th></tr></thead><tbody id="reportDailyStaffRows"></tbody></table></div></div>
+<div class="panel" style="margin-top:15px"><h2>Rincian pendapatan petugas parkir</h2><div class="tablewrap"><table style="min-width:520px"><thead><tr><th>Tanggal</th><th>Petugas</th><th>Pendapatan petugas</th></tr></thead><tbody id="reportDailyStaffRows"></tbody></table></div></div>
 </div>
 </section>
 <section id="history" class="section">
