@@ -145,6 +145,12 @@ button{font-size:16px;min-height:46px}
  .dashboard-period-toolbar>.field:nth-child(3){grid-column:1/-1}
  .dashboard-period-toolbar>.dash-month,.dashboard-period-toolbar>.dash-year{grid-column:1/-1}
 }
+
+/* Keep dashboard period controls balanced in every filter mode */
+.dashboard-period-toolbar .dash-custom input:disabled{background:#f3f6fa;color:#53657d;border-color:#dce3ec;opacity:1;cursor:default}
+.dashboard-period-toolbar .dash-custom input:disabled::-webkit-calendar-picker-indicator{opacity:.35}
+@media(max-width:900px){.dashboard-period-toolbar{grid-template-columns:repeat(2,minmax(0,1fr))}.dashboard-period-toolbar>.dash-custom:nth-child(1),.dashboard-period-toolbar>.dash-custom:nth-child(2),.dashboard-period-toolbar>.field:nth-child(3),.dashboard-period-toolbar>.dash-month,.dashboard-period-toolbar>.dash-year{grid-column:auto}}
+@media(max-width:650px){.dashboard-period-toolbar{grid-template-columns:1fr 1fr}.dashboard-period-toolbar>.dash-custom:nth-child(1),.dashboard-period-toolbar>.dash-custom:nth-child(2){grid-column:auto}.dashboard-period-toolbar>.field:nth-child(3),.dashboard-period-toolbar>.dash-month,.dashboard-period-toolbar>.dash-year{grid-column:1/-1}}
 </style>
 </head>
 <body>
