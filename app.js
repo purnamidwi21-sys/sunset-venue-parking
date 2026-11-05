@@ -171,7 +171,7 @@ function draw(){drawDash();drawHistory();if($('reports').classList.contains('act
 function page(p){document.querySelectorAll('.section').forEach(x=>x.classList.toggle('active',x.id===p));document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('active',x.dataset.page===p));setText('pageTitle',({dashboard:'Dashboard',entry:'Input Harian',reports:'Laporan',history:'Data Historis'})[p]);if(p==='reports')drawReport()}
 document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>page(b.dataset.page));
 window.payParkingRecipient=payRecipient;
-function addExpenseRow(category='Jajan',amount='',description=''){
+function addExpenseRow(category='',amount='',description=''){
  const row=document.createElement('div');row.className='expense-row';
  row.innerHTML='<div><label>Item pengeluaran</label><input class="expense-kind" type="text" placeholder="Contoh: Jajan, Kopi, BBM"></div><div><label>Nominal (Rp)</label><input class="expense-value" type="number" min="0" step="1" placeholder="0"></div><div><label>Keterangan (opsional)</label><input class="expense-note" type="text" placeholder="Catatan"></div><button type="button" class="secondary remove-expense">Hapus</button>';
  $('expenseRows').appendChild(row);
