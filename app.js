@@ -150,7 +150,7 @@ function drawDash(){const range=dashDateRange();let a=records.filter(r=>(!range.
  $('dSunset').textContent=money(t.sun);$('dAdat').textContent=money(t.adat);$('dStaff').textContent=money(t.pool);
  const settlements=settlementRows(a);
  $('dashSettlementRows').innerHTML=settlements.length?settlements.map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+money(x.due)+'</td><td>'+money(x.paid)+'</td><td>'+money(Math.max(0,x.balance))+'</td><td>'+(admin()&&x.balance>0.009?'<button class="secondary" onclick="window.payParkingRecipient(\''+x.type+'\',\''+esc(x.name)+'\')">Bayar</button>':'—')+'</td></tr>').join(''):'<tr><td colspan="5" class="empty">Belum ada pembagian pada periode ini.</td></tr>';
- $('dashPayAllBtn').classList.toggle('hidden',!admin());$('dashPayAllBtn').disabled=outstanding<=0.009;
+ $('dashPayAllBtn').classList.toggle('hidden',!admin());$('dashPayAllBtn').disabled=totalBalance(a)<=0.009;
  const categoryTotals=expenseCategoryTotals(a);
  $('dashExpenseCategories').innerHTML=categoryTotals.length?categoryTotals.map(x=>'<div class="share"><span>'+esc(x.category)+'</span><b>'+money(x.amount)+'</b></div>').join(''):'<div class="empty">Belum ada biaya pada periode ini.</div>';
  const perStaff=staffEarnings(a);
