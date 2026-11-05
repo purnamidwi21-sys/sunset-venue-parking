@@ -237,7 +237,7 @@ $('importExcel').onclick=async()=>{
    const date=dateParse(o.tanggal??o.date??o.tgl);
    if(!date){skipped++;continue}
    if(Object.prototype.hasOwnProperty.call(o,'kategori')){
-    const category=String(o.kategori??'').trim().toLowerCase().replace(/\\s+/g,' ');
+    const category=String(o.kategori??'').trim().toLowerCase().replace(/\s+/g,' ');
     const description=String(o.keterangan??'').trim();
     const incoming=Number(String(o.pemasukan??'').replace(/[^0-9.-]/g,''))||0;
     const outgoing=Number(String(o.pengeluaran??'').replace(/[^0-9.-]/g,''))||0;
