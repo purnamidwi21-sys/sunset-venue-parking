@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sunset Venue Parking</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+<style>
+:root{--bg:#101827;--panel:#182438;--panel2:#202f45;--line:#30415a;--text:#f4f6fa;--muted:#9eacc0;--orange:#ff9b45;--green:#45c99a;--red:#ff7373}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px Inter,system-ui,-apple-system,Segoe UI,sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer;border:0;border-radius:10px;padding:11px 15px;background:var(--orange);color:#21180f;font-weight:750}button.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--line)}button.danger{background:#572f39;color:#ffd8dc}.app{display:grid;grid-template-columns:240px 1fr;min-height:100vh}.side{background:#121e30;border-right:1px solid var(--line);padding:24px 16px}.brand{font-size:18px;font-weight:850;letter-spacing:.3px;margin:0 8px 4px}.subbrand{color:var(--muted);font-size:11px;margin:0 8px 28px}.nav{display:grid;gap:7px}.nav button{background:transparent;color:var(--muted);text-align:left;font-weight:600}.nav button.active,.nav button:hover{background:var(--panel2);color:white}.main{padding:28px;max-width:1500px;width:100%;margin:auto}.top{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:24px}.top h1{font-size:25px;margin:0}.muted{color:var(--muted)}.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:18px 0}.card,.panel{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:18px}.card .label{font-size:12px;color:var(--muted)}.card .value{font-size:24px;font-weight:800;margin-top:10px}.green{color:var(--green)}.orange{color:var(--orange)}.red{color:var(--red)}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:15px}.panel h2{font-size:16px;margin:0 0 16px}.shares{display:grid;gap:13px}.share{display:flex;justify-content:space-between;gap:12px;padding-bottom:12px;border-bottom:1px solid var(--line)}.share:last-child{border:0;padding:0}.share strong{font-size:15px}.field{display:grid;gap:7px;margin-bottom:14px}.field label{font-size:12px;color:var(--muted)}input,select,textarea{width:100%;background:#101a2a;border:1px solid var(--line);border-radius:9px;padding:11px;color:var(--text);outline:none}input:focus,select:focus,textarea:focus{border-color:var(--orange)}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.stafflist{display:flex;flex-wrap:wrap;gap:8px}.stafftag{display:flex;align-items:center;gap:7px;background:#101a2a;border:1px solid var(--line);border-radius:20px;padding:8px 11px;color:var(--text)}.stafftag input{width:auto;accent-color:var(--orange)}.actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:10px}.toolbar{display:flex;flex-wrap:wrap;align-items:end;gap:10px;margin-bottom:16px}.toolbar .field{min-width:150px;margin:0}.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:680px}th,td{text-align:left;padding:12px 10px;border-bottom:1px solid var(--line);white-space:nowrap}th{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}td{font-size:13px}.empty{padding:28px;text-align:center;color:var(--muted)}.hidden{display:none!important}.notice{border:1px solid #775a35;background:#30291f;color:#ffd7a8;padding:12px 14px;border-radius:10px;line-height:1.5;margin-bottom:16px;font-size:12px}.status{font-size:12px;color:var(--muted)}.badge{display:inline-block;background:#243a3a;color:#9ce9cd;border-radius:20px;padding:5px 8px;font-size:11px}.section{display:none}.section.active{display:block}.right{display:flex;gap:8px;align-items:center}.mobilehead{display:none}
+@media(max-width:900px){.app{grid-template-columns:1fr}.side{padding:13px 14px;border-right:0;border-bottom:1px solid var(--line)}.brand{display:inline-block;margin:0}.subbrand{display:inline-block;margin:0 0 0 8px}.nav{display:flex;overflow:auto;margin-top:12px}.nav button{white-space:nowrap;padding:9px 12px}.main{padding:20px 14px}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}.grid2{grid-template-columns:1fr}}
+@media(max-width:520px){.cards{gap:9px}.card{padding:13px}.card .value{font-size:19px}.formgrid{grid-template-columns:1fr}.top h1{font-size:21px}.top{align-items:flex-start;flex-direction:column}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="side">
+<div class="brand">SUNSET VENUE</div><div class="subbrand">PARKING FINANCE</div>
+<nav class="nav">
+<button class="active" data-page="dashboard">▦ Dashboard</button>
+<button data-page="entry">＋ Input Harian</button>
+<button data-page="reports">▤ Laporan</button>
+<button data-page="history">◷ Data Historis</button>
+</nav>
+</aside>
+<main class="main">
+<header class="top"><div><h1 id="pageTitle">Dashboard</h1><div class="muted" style="margin-top:5px">Revenue, pengeluaran & pembagian hasil parkir</div></div><div class="right"><span class="badge">MVP • Data lokal</span></div></header>
+<div class="notice">Versi awal ini menyimpan data di browser/perangkat yang digunakan. Data belum tersinkron antarpetugas atau antarperangkat. Jangan hapus data browser sebelum membuat backup Excel. Database online dan login multi-user perlu dikonfigurasi pada tahap berikutnya.</div>
+<section id="dashboard" class="section active">
+<div class="toolbar"><div class="field"><label>Periode dashboard</label><select id="dashPeriod"><option value="today">Hari ini</option><option value="month">Bulan ini</option><option value="all">Semua data</option></select></div><div class="field"><label>&nbsp;</label><button class="secondary" id="refreshDash">Perbarui</button></div></div>
+<div class="cards">
+<div class="card"><div class="label">TOTAL REVENUE</div><div class="value green" id="dRevenue">Rp0</div></div>
+<div class="card"><div class="label">TOTAL PENGELUARAN</div><div class="value" id="dExpenses">Rp0</div></div>
+<div class="card"><div class="label">NET REVENUE</div><div class="value orange" id="dNet">Rp0</div></div>
+<div class="card"><div class="label">JUMLAH HARI TERCATAT</div><div class="value" id="dDays">0</div></div>
+</div>
+<div class="grid2">
+<div class="panel"><h2>Pembagian hasil</h2><div class="shares">
+<div class="share"><span>Sunset Venue <span class="muted">· 25%</span></span><strong id="dSunset">Rp0</strong></div>
+<div class="share"><span>Adat <span class="muted">· 25%</span></span><strong id="dAdat">Rp0</strong></div>
+<div class="share"><span>Petugas <span class="muted">· 50%</span></span><strong id="dStaff">Rp0</strong></div>
+</div><p class="status">Bagian petugas dibagi rata berdasarkan jumlah petugas yang tercatat bertugas per hari.</p></div>
+<div class="panel"><h2>Aktivitas terbaru</h2><div id="recent"></div></div>
+</div>
+</section>
+<section id="entry" class="section">
+<div class="panel">
+<h2>Input pendapatan & pengeluaran harian</h2>
+<form id="dailyForm">
+<div class="formgrid">
+<div class="field"><label>Tanggal</label><input id="date" type="date" required></div>
+<div class="field"><label>Total revenue (Rp)</label><input id="revenue" type="number" min="0" step="1" placeholder="Contoh: 1500000" required></div>
+</div>
+<div class="formgrid">
+<div class="field"><label>Total pengeluaran (Rp)</label><input id="expenses" type="number" min="0" step="1" value="0" required></div>
+<div class="field"><label>Keterangan pengeluaran / catatan</label><input id="note" type="text" placeholder="Contoh: uang bensin, konsumsi, dll."></div>
+</div>
+<div class="field"><label>Petugas yang bertugas pada tanggal tersebut (pilih semua yang bertugas)</label><div class="stafflist" id="staffChecks"></div></div>
+<div id="preview" class="notice">Isi revenue, pengeluaran, dan petugas untuk melihat simulasi pembagian hasil.</div>
+<div class="actions"><button type="submit">Simpan data harian</button><button type="button" class="secondary" id="resetForm">Reset</button></div>
+</form>
+</div>
+</section>
+<section id="reports" class="section">
+<div class="panel">
+<h2>Laporan berdasarkan periode</h2>
+<div class="toolbar">
+<div class="field"><label>Dari tanggal</label><input type="date" id="fromDate"></div>
+<div class="field"><label>Sampai tanggal</label><input type="date" id="toDate"></div>
+<button id="runReport">Tampilkan laporan</button><button class="secondary" id="pdfReport">Download PDF</button><button class="secondary" id="waReport">Kirim PDF ke WhatsApp</button>
+</div>
+<div id="reportSummary" class="cards"></div>
+<div class="panel" style="padding:0;border:0"><div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>Revenue</th><th>Pengeluaran</th><th>Net</th><th>Sunset 25%</th><th>Adat 25%</th><th>Petugas 50%</th><th>Petugas bertugas</th></tr></thead><tbody id="reportRows"></tbody></table></div></div>
+</div>
+</section>
+<section id="history" class="section">
+<div class="panel">
+<h2>Import data historis dari Excel</h2>
+<p class="muted">Upload file .xlsx, .xls atau .csv. Kolom yang dikenali: <b>Tanggal</b>, <b>Revenue</b>, <b>Pengeluaran</b>, <b>Petugas</b>, <b>Catatan</b>. Nama petugas dipisahkan koma jika lebih dari satu.</p>
+<div class="field"><label>Pilih file Excel / CSV</label><input id="excelFile" type="file" accept=".xlsx,.xls,.csv"></div>
+<div class="actions"><button id="importExcel">Import data</button><button class="secondary" id="exportExcel">Download backup Excel</button></div>
+<div id="importMessage" class="status" style="margin-top:14px"></div>
+</div>
+<div class="panel" style="margin-top:15px"><h2>Semua data tersimpan</h2><div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>Revenue</th><th>Pengeluaran</th><th>Net</th><th>Petugas</th><th>Catatan</th><th>Aksi</th></tr></thead><tbody id="historyRows"></tbody></table></div></div>
+</section>
+</main>
+</div>
+<script>
+const STAFF=['Pak Gangga','Pak Manik','Pak Bayu','Pak Dek Putra','Pak Riki'];
+const KEY='sunsetVenueParkingRecordsV1';
+let records=loadRecords(), currentReport=[];
+const rupiah=n=>new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(n)||0);
+const dateNow=()=>new Date().toLocaleDateString('en-CA');
+function loadRecords(){try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){return[]}}
+function save(){localStorage.setItem(KEY,JSON.stringify(records));renderAll()}
+function calc(r){const net=Number(r.revenue)-Number(r.expenses);const staffTotal=net*.5;const each=r.staff?.length?staffTotal/r.staff.length:0;return{net,sunset:net*.25,adat:net*.25,staffTotal,each}}
+function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function renderStaffChecks(){document.getElementById('staffChecks').innerHTML=STAFF.map((s,i)=>'<label class="stafftag"><input type="checkbox" value="'+s+'" id="staff'+i+'">'+s+'</label>').join('')}
+function selectedStaff(){return STAFF.filter((s,i)=>document.getElementById('staff'+i)?.checked)}
+function setPage(p){document.querySelectorAll('.section').forEach(x=>x.classList.toggle('active',x.id===p));document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('active',x.dataset.page===p));document.getElementById('pageTitle').textContent=({dashboard:'Dashboard',entry:'Input Harian',reports:'Laporan',history:'Data Historis'})[p];if(p==='reports')runReport();if(p==='history')renderHistory()}
+document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>setPage(b.dataset.page)));
+function periodRecords(period){const today=dateNow();return records.filter(r=>period==='all'||(period==='today'?r.date===today:r.date.slice(0,7)===today.slice(0,7)))}
+function totals(list){return list.reduce((a,r)=>{const c=calc(r);a.rev+=Number(r.revenue);a.exp+=Number(r.expenses);a.net+=c.net;a.sunset+=c.sunset;a.adat+=c.adat;a.staff+=c.staffTotal;return a},{rev:0,exp:0,net:0,sunset:0,adat:0,staff:0})}
+function renderDashboard(){const list=periodRecords(document.getElementById('dashPeriod').value),t=totals(list);dRevenue.textContent=rupiah(t.rev);dExpenses.textContent=rupiah(t.exp);dNet.textContent=rupiah(t.net);dDays.textContent=list.length;dSunset.textContent=rupiah(t.sunset);dAdat.textContent=rupiah(t.adat);dStaff.textContent=rupiah(t.staff);const recent=[...list].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5);document.getElementById('recent').innerHTML=recent.length?recent.map(r=>'<div class="share"><span>'+escapeHtml(r.date)+'<small class="muted" style="display:block">'+escapeHtml((r.staff||[]).join(', '))+'</small></span><strong>'+rupiah(calc(r).net)+'</strong></div>').join(''):'<div class="empty">Belum ada data.</div>'}
+function renderHistory(){const body=document.getElementById('historyRows');body.innerHTML=records.length?[...records].sort((a,b)=>b.date.localeCompare(a.date)).map(r=>'<tr><td>'+escapeHtml(r.date)+'</td><td>'+rupiah(r.revenue)+'</td><td>'+rupiah(r.expenses)+'</td><td>'+rupiah(calc(r).net)+'</td><td>'+escapeHtml((r.staff||[]).join(', '))+'</td><td>'+escapeHtml(r.note||'')+'</td><td><button class="danger" style="padding:7px 9px" onclick="deleteRecord(\''+r.id+'\')">Hapus</button></td></tr>').join(''):'<tr><td colspan="7" class="empty">Belum ada data.</td></tr>'}
+function renderAll(){renderDashboard();renderHistory();if(document.getElementById('reports').classList.contains('active'))runReport()}
+function deleteRecord(id){if(confirm('Hapus catatan ini?')){records=records.filter(r=>r.id!==id);save()}}
+function preview(){const rev=Number(revenue.value)||0,exp=Number(expenses.value)||0,staff=selectedStaff(),net=rev-exp,part=net*.5;previewBox.innerHTML='Net revenue: <b>'+rupiah(net)+'</b> · Sunset: <b>'+rupiah(net*.25)+'</b> · Adat: <b>'+rupiah(net*.25)+'</b> · Petugas: <b>'+rupiah(part)+'</b> ('+staff.length+' orang'+(staff.length?' · '+rupiah(part/staff.length)+' per orang':' · pilih petugas')+')'}
+const previewBox=document.getElementById('preview');
+document.getElementById('dailyForm').addEventListener('input',preview);
+document.getElementById('dailyForm').addEventListener('change',preview);
+document.getElementById('dailyForm').addEventListener('submit',e=>{e.preventDefault();const date=document.getElementById('date').value,rev=Number(revenue.value),exp=Number(expenses.value),staff=selectedStaff();if(!staff.length){alert('Pilih minimal satu petugas yang bertugas.');return}if(rev<0||exp<0||!Number.isFinite(rev)||!Number.isFinite(exp)){alert('Nominal tidak valid.');return}const existing=records.findIndex(r=>r.date===date);const rec={id:existing>=0?records[existing].id:crypto.randomUUID(),date,revenue:rev,expenses:exp,staff,note:note.value.trim(),updatedAt:new Date().toISOString()};if(existing>=0){if(!confirm('Data tanggal ini sudah ada. Timpa data yang lama?'))return;records[existing]=rec}else records.push(rec);save();alert('Data harian berhasil disimpan.');setPage('dashboard')});
+document.getElementById('resetForm').onclick=()=>{dailyForm.reset();date.value=dateNow();expenses.value=0;renderStaffChecks();preview()};
+function getFiltered(){const from=fromDate.value,to=toDate.value;return records.filter(r=>(!from||r.date>=from)&&(!to||r.date<=to)).sort((a,b)=>a.date.localeCompare(b.date))}
+function runReport(){currentReport=getFiltered();const t=totals(currentReport);reportSummary.innerHTML=[['Revenue',t.rev],['Pengeluaran',t.exp],['Net Revenue',t.net],['Bagian Petugas',t.staff]].map(x=>'<div class="card"><div class="label">'+x[0]+'</div><div class="value">'+rupiah(x[1])+'</div></div>').join('');reportRows.innerHTML=currentReport.length?currentReport.map(r=>{const c=calc(r);return'<tr><td>'+escapeHtml(r.date)+'</td><td>'+rupiah(r.revenue)+'</td><td>'+rupiah(r.expenses)+'</td><td>'+rupiah(c.net)+'</td><td>'+rupiah(c.sunset)+'</td><td>'+rupiah(c.adat)+'</td><td>'+rupiah(c.staffTotal)+'</td><td>'+escapeHtml((r.staff||[]).join(', '))+'</td></tr>'}).join(''):'<tr><td colspan="8" class="empty">Tidak ada data pada periode ini.</td></tr>'}
+function makePdf(){if(!currentReport.length){alert('Tidak ada data untuk dibuat PDF.');return null}const {jsPDF}=window.jspdf,doc=new jsPDF({orientation:'landscape'}),t=totals(currentReport);doc.setFontSize(18);doc.text('SUNSET VENUE PARKING',14,16);doc.setFontSize(10);doc.text('Laporan '+currentReport[0].date+' s/d '+currentReport[currentReport.length-1].date,14,23);doc.text('Revenue: '+rupiah(t.rev)+'   Pengeluaran: '+rupiah(t.exp)+'   Net: '+rupiah(t.net),14,31);doc.text('Sunset 25%: '+rupiah(t.sunset)+'   Adat 25%: '+rupiah(t.adat)+'   Petugas 50%: '+rupiah(t.staff),14,37);doc.autoTable({startY:44,head:[['Tanggal','Revenue','Pengeluaran','Net','Sunset 25%','Adat 25%','Petugas 50%','Petugas bertugas']],body:currentReport.map(r=>{const c=calc(r);return[r.date,rupiah(r.revenue),rupiah(r.expenses),rupiah(c.net),rupiah(c.sunset),rupiah(c.adat),rupiah(c.staffTotal),(r.staff||[]).join(', ')]}),styles:{fontSize:8},headStyles:{fillColor:[28,43,64]}});return doc}
+document.getElementById('pdfReport').onclick=()=>{const d=makePdf();if(d)d.save('Sunset-Parking-Report.pdf')};
+document.getElementById('waReport').onclick=async()=>{const d=makePdf();if(!d)return;const blob=d.output('blob'),file=new File([blob],'Sunset-Parking-Report.pdf',{type:'application/pdf'});if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:'Sunset Venue Parking Report',text:'Laporan parkir Sunset Venue'});return}catch(e){if(e.name==='AbortError')return}}d.save('Sunset-Parking-Report.pdf');const t=totals(currentReport),msg='Laporan Sunset Venue Parking ('+currentReport[0].date+' - '+currentReport[currentReport.length-1].date+')%0ARevenue: '+encodeURIComponent(rupiah(t.rev))+'%0APengeluaran: '+encodeURIComponent(rupiah(t.exp))+'%0ANet: '+encodeURIComponent(rupiah(t.net))+'%0A%0APDF sudah diunduh. Silakan lampirkan file PDF tersebut di chat WhatsApp.';window.open('https://wa.me/?text='+msg,'_blank')};
+document.getElementById('runReport').onclick=runReport;
+function normKey(s){return String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'')}
+function importRows(rows){let added=0,updated=0,skipped=0;for(const row of rows){const obj={};Object.keys(row).forEach(k=>obj[normKey(k)]=row[k]);const dateVal=obj.tanggal??obj.date??obj.tgl;let date='';if(dateVal instanceof Date)date=dateVal.toLocaleDateString('en-CA');else if(typeof dateVal==='number'){const dt=XLSX.SSF.parse_date_code(dateVal);if(dt)date=[dt.y,String(dt.m).padStart(2,'0'),String(dt.d).padStart(2,'0')].join('-')}else if(dateVal){const s=String(dateVal).trim();if(/^\d{4}-\d{2}-\d{2}$/.test(s))date=s;else{const p=s.split(/[\/.-]/);if(p.length===3){let [a,b,c]=p;if(a.length===4)date=a+'-'+b.padStart(2,'0')+'-'+c.padStart(2,'0');else date=c+'-'+b.padStart(2,'0')+'-'+a.padStart(2,'0')}}}const rev=Number(String(obj.revenue??obj.totalrevenue??obj.pendapatan??'').replace(/[^0-9.-]/g,''));const exp=Number(String(obj.pengeluaran??obj.expenses??obj.totalpengeluaran??'0').replace(/[^0-9.-]/g,''));if(!date||!Number.isFinite(rev)||!Number.isFinite(exp)){skipped++;continue}const rawStaff=String(obj.petugas??obj.staff??'');const staff=rawStaff.split(/[,;|]/).map(s=>s.trim()).filter(s=>STAFF.includes(s));const rec={id:crypto.randomUUID(),date,revenue:rev,expenses:exp,staff,note:String(obj.catatan??obj.note??''),updatedAt:new Date().toISOString()};const idx=records.findIndex(r=>r.date===date);if(idx>=0){records[idx]={...records[idx],...rec,id:records[idx].id};updated++}else{records.push(rec);added++}}save();return{added,updated,skipped}}
+document.getElementById('importExcel').onclick=()=>{const f=excelFile.files[0];if(!f){alert('Pilih file terlebih dahulu.');return}const reader=new FileReader();reader.onload=e=>{try{const wb=XLSX.read(e.target.result,{type:'array',cellDates:true});const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});const res=importRows(rows);importMessage.textContent='Import selesai. Data baru: '+res.added+', diperbarui: '+res.updated+', dilewati: '+res.skipped+'. Periksa kembali hasil import.'}catch(err){importMessage.textContent='Gagal import: '+err.message}};reader.readAsArrayBuffer(f)};
+document.getElementById('exportExcel').onclick=()=>{if(!records.length){alert('Belum ada data.');return}const rows=records.map(r=>({Tanggal:r.date,Revenue:r.revenue,Pengeluaran:r.expenses,Petugas:(r.staff||[]).join(', '),Catatan:r.note||''}));const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Parking Records');XLSX.writeFile(wb,'Sunset-Parking-Backup.xlsx')};
+document.getElementById('dashPeriod').onchange=renderDashboard;document.getElementById('refreshDash').onclick=renderDashboard;
+date.value=dateNow();fromDate.value=dateNow().slice(0,7)+'-01';toDate.value=dateNow();renderStaffChecks();preview();renderAll();
+</script>
+</body></html>
