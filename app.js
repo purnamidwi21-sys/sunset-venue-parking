@@ -39,7 +39,10 @@ async function loadData(){
   const sum=items.reduce((s,z)=>s+z.amount,0);
   return{id:x.id,date:x.record_date,revenue:Number(x.total_revenue),expenses:items.length?sum:legacy,expenseItems:items,note:x.note||'',staff:(duty[x.id]||[]).filter(Boolean),source:x.source};
  });
- $('staffChecks').innerHTML=STAFF.map((x,i)=>'<label class="stafftag"><input type="checkbox" id="st'+i+'">'+x+'</label>').join('');
+ $('staffChecks').innerHTML='<label class="stafftag staff-all"><input type="checkbox" id="stAll">Semua Bertugas</label>'+STAFF.map((x,i)=>'<label class="stafftag"><input type="checkbox" id="st'+i+'">'+x+'</label>').join('');
+ const all=$('stAll');
+ if(all)all.onchange=()=>{STAFF.forEach((x,i)=>{const el=$('st'+i);if(el)el.checked=all.checked});preview()};
+ STAFF.forEach((x,i)=>{const el=$('st'+i);if(el)el.onchange=()=>{if(all)all.checked=STAFF.every((n,k)=>$('st'+k)?.checked);preview()}});
 }
 const chosen=()=>STAFF.filter((x,i)=>$('st'+i)?.checked);
 async function saveRecord(r){
@@ -145,8 +148,6 @@ function syncDashFilters(){const p=$('dashPreset').value;document.querySelectorA
 function drawDash(){const range=dashDateRange();let a=records.filter(r=>(!range.from||r.date>=range.from)&&(!range.to||r.date<=range.to)),t=total(a);dashRows=a;
  $('dRevenue').textContent=money(t.rev);$('dExpenses').textContent=money(t.exp);$('dNet').textContent=money(t.net);$('dDays').textContent=a.length;
  $('dSunset').textContent=money(t.sun);$('dAdat').textContent=money(t.adat);$('dStaff').textContent=money(t.pool);
- const lines=settlementLines(a),paid=lines.reduce((s,x)=>s+x.paid,0),outstanding=totalBalance(a);
- $('dPaid').textContent=money(paid);$('dOutstanding').textContent=money(outstanding);
  const settlements=settlementRows(a);
  $('dashSettlementRows').innerHTML=settlements.length?settlements.map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+money(x.due)+'</td><td>'+money(x.paid)+'</td><td>'+money(Math.max(0,x.balance))+'</td><td>'+(admin()&&x.balance>0.009?'<button class="secondary" onclick="window.payParkingRecipient(\''+x.type+'\',\''+esc(x.name)+'\')">Bayar</button>':'—')+'</td></tr>').join(''):'<tr><td colspan="5" class="empty">Belum ada pembagian pada periode ini.</td></tr>';
  $('dashPayAllBtn').classList.toggle('hidden',!admin());$('dashPayAllBtn').disabled=outstanding<=0.009;
@@ -197,7 +198,7 @@ function collectExpenseItemsSafe(){try{return collectExpenseItems()}catch(e){ret
 function preview(){
  const rev=Number($('revenue').value)||0,items=collectExpenseItemsSafe(),exp=items.reduce((s,x)=>s+x.amount,0),st=chosen(),net=rev-exp,pool=net*.5;
  $('expenseTotal').textContent=money(exp);
- $('preview').innerHTML='Total biaya: <b>'+money(exp)+'</b> · Net revenue: <b>'+money(net)+'</b><br>Sunset Venue 25%: <b>'+money(net*.25)+'</b> · Desa Adat 25%: <b>'+money(net*.25)+'</b> · Petugas 50%: <b>'+money(pool)+'</b> ('+st.length+' orang'+(st.length?' · '+money(pool/st.length)+' per orang':' · pilih petugas')+')';
+ $('preview').innerHTML='<div class="preview-line"><span>Total biaya:</span> <b>'+money(exp)+'</b> <span class="preview-dot">·</span> <span>Net revenue:</span> <b>'+money(net)+'</b></div><div class="preview-line"><span>Sunset Venue 25%:</span> <b>'+money(net*.25)+'</b> <span class="preview-dot">·</span> <span>Desa Adat 25%:</span> <b>'+money(net*.25)+'</b> <span class="preview-dot">·</span> <span>Petugas 50%:</span> <b>'+money(pool)+'</b> <span class="preview-count">('+st.length+' orang'+(st.length?' · '+money(pool/st.length)+' per orang':' · pilih petugas')+')</span></div>';
 }
 $('dailyForm').addEventListener('input',preview);
 $('dailyForm').addEventListener('change',e=>{if(e.target.classList.contains('expense-kind'))e.target.closest('.expense-row').querySelector('.expense-custom').classList.toggle('hidden',e.target.value!=='__custom');preview()});
