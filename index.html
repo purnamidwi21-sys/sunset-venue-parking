@@ -5,7 +5,8 @@
 <title>Sunset Venue Parking</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{--bg:#101827;--panel:#182438;--panel2:#202f45;--line:#30415a;--text:#f4f6fa;--muted:#9eacc0;--orange:#ff9b45;--green:#45c99a;--red:#ff7373}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px Inter,system-ui,-apple-system,Segoe UI,sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer;border:0;border-radius:10px;padding:11px 15px;background:var(--orange);color:#21180f;font-weight:750}button.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--line)}button.danger{background:#572f39;color:#ffd8dc}.app{display:grid;grid-template-columns:240px 1fr;min-height:100vh}.side{background:#121e30;border-right:1px solid var(--line);padding:24px 16px}.brand{font-size:18px;font-weight:850;letter-spacing:.3px;margin:0 8px 4px}.subbrand{color:var(--muted);font-size:11px;margin:0 8px 28px}.nav{display:grid;gap:7px}.nav button{background:transparent;color:var(--muted);text-align:left;font-weight:600}.nav button.active,.nav button:hover{background:var(--panel2);color:white}.main{padding:28px;max-width:1500px;width:100%;margin:auto}.top{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:24px}.top h1{font-size:25px;margin:0}.muted{color:var(--muted)}.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:18px 0}.card,.panel{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:18px}.card .label{font-size:12px;color:var(--muted)}.card .value{font-size:24px;font-weight:800;margin-top:10px}.green{color:var(--green)}.orange{color:var(--orange)}.red{color:var(--red)}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:15px}.panel h2{font-size:16px;margin:0 0 16px}.shares{display:grid;gap:13px}.share{display:flex;justify-content:space-between;gap:12px;padding-bottom:12px;border-bottom:1px solid var(--line)}.share:last-child{border:0;padding:0}.share strong{font-size:15px}.field{display:grid;gap:7px;margin-bottom:14px}.field label{font-size:12px;color:var(--muted)}input,select,textarea{width:100%;background:#101a2a;border:1px solid var(--line);border-radius:9px;padding:11px;color:var(--text);outline:none}input:focus,select:focus,textarea:focus{border-color:var(--orange)}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.stafflist{display:flex;flex-wrap:wrap;gap:8px}.stafftag{display:flex;align-items:center;gap:7px;background:#101a2a;border:1px solid var(--line);border-radius:20px;padding:8px 11px;color:var(--text)}.stafftag input{width:auto;accent-color:var(--orange)}.actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:10px}.toolbar{display:flex;flex-wrap:wrap;align-items:end;gap:10px;margin-bottom:16px}.toolbar .field{min-width:150px;margin:0}.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:680px}th,td{text-align:left;padding:12px 10px;border-bottom:1px solid var(--line);white-space:nowrap}th{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}td{font-size:13px}.empty{padding:28px;text-align:center;color:var(--muted)}.hidden{display:none!important}.notice{border:1px solid #775a35;background:#30291f;color:#ffd7a8;padding:12px 14px;border-radius:10px;line-height:1.5;margin-bottom:16px;font-size:12px}.status{font-size:12px;color:var(--muted)}.badge{display:inline-block;background:#243a3a;color:#9ce9cd;border-radius:20px;padding:5px 8px;font-size:11px}.section{display:none}.section.active{display:block}.right{display:flex;gap:8px;align-items:center}.mobilehead{display:none}
@@ -218,7 +219,40 @@ button{font-size:16px;min-height:46px}
  .report-period-toolbar>button:last-child{grid-column:1/-1}
  .report-staff-field{width:100%;min-width:0}
 }
-\n.enter-action{background:#f2a94a;color:#21180f;min-height:42px;padding:10px 18px;font-weight:850;letter-spacing:.1px;box-shadow:0 2px 0 rgba(0,0,0,.18)}.enter-action:hover{filter:brightness(1.08)}.dashboard-period-toolbar .enter-action{align-self:end}@media(max-width:650px){.dashboard-period-toolbar .enter-action{width:100%}}\n</style>
+
+.enter-action{background:#f2a94a;color:#21180f;min-height:42px;padding:10px 18px;font-weight:850;letter-spacing:.1px;box-shadow:0 2px 0 rgba(0,0,0,.18)}.enter-action:hover{filter:brightness(1.08)}.dashboard-period-toolbar .enter-action{align-self:end}@media(max-width:650px){.dashboard-period-toolbar .enter-action{width:100%}}
+
+/* Clearly visible Enter action buttons on every main section */
+.enter-action{
+ display:inline-flex!important;
+ align-items:center;
+ justify-content:center;
+ gap:8px;
+ min-height:48px;
+ padding:12px 22px;
+ border:2px solid #c56b18;
+ border-radius:11px;
+ background:#f2a94a!important;
+ color:#21180f!important;
+ font-size:16px;
+ font-weight:850;
+ line-height:1.2;
+ text-align:center;
+ box-shadow:0 3px 0 #c56b18;
+ cursor:pointer;
+}
+.enter-action:hover{filter:brightness(1.05);transform:translateY(-1px)}
+.enter-action:active{transform:translateY(1px);box-shadow:0 1px 0 #c56b18}
+#loginForm .enter-action{width:100%;margin-top:8px}
+#dailyForm .actions .enter-action{min-width:230px}
+.report-period-toolbar>#reportEnter{grid-column:span 2}
+@media(max-width:600px){
+ .enter-action{width:100%;min-height:48px}
+ #dailyForm .actions .enter-action{min-width:0}
+ .report-period-toolbar>#reportEnter{grid-column:1/-1}
+}
+
+</style>
 </head>
 <body>
 <div id="loginScreen" class="login-shell"><form id="loginForm" class="login-card"><div class="brand">SUNSET VENUE</div><div class="subbrand">PARKING FINANCE SYSTEM</div><h1>Login</h1><p class="muted">Masuk menggunakan akun dari administrator.</p><div class="field"><label>Email</label><input id="loginEmail" type="email" autocomplete="username" required></div><div class="field"><label>Password</label><input id="loginPassword" type="password" autocomplete="current-password" required></div><button id="loginButton" style="width:100%">↵ Enter · Masuk</button><div id="loginMessage" class="status" style="margin-top:12px"></div></form></div>
@@ -298,5 +332,5 @@ button{font-size:16px;min-height:46px}
 </section>
 </main>
 </div>
-<script src="app.js?v=visible-enter-buttons-20261106"></script>
+<script src="app.js?v=enter-buttons-visible-20261106b"></script>
 </body></html>
