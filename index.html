@@ -11,6 +11,7 @@
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px Inter,system-ui,-apple-system,Segoe UI,sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer;border:0;border-radius:10px;padding:11px 15px;background:var(--orange);color:#21180f;font-weight:750}button.secondary{background:var(--panel2);color:var(--text);border:1px solid var(--line)}button.danger{background:#572f39;color:#ffd8dc}.app{display:grid;grid-template-columns:240px 1fr;min-height:100vh}.side{background:#121e30;border-right:1px solid var(--line);padding:24px 16px}.brand{font-size:18px;font-weight:850;letter-spacing:.3px;margin:0 8px 4px}.subbrand{color:var(--muted);font-size:11px;margin:0 8px 28px}.nav{display:grid;gap:7px}.nav button{background:transparent;color:var(--muted);text-align:left;font-weight:600}.nav button.active,.nav button:hover{background:var(--panel2);color:white}.main{padding:28px;max-width:1500px;width:100%;margin:auto}.top{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:24px}.top h1{font-size:25px;margin:0}.muted{color:var(--muted)}.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:18px 0}.card,.panel{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:18px}.card .label{font-size:12px;color:var(--muted)}.card .value{font-size:24px;font-weight:800;margin-top:10px}.green{color:var(--green)}.orange{color:var(--orange)}.red{color:var(--red)}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:15px}.panel h2{font-size:16px;margin:0 0 16px}.shares{display:grid;gap:13px}.share{display:flex;justify-content:space-between;gap:12px;padding-bottom:12px;border-bottom:1px solid var(--line)}.share:last-child{border:0;padding:0}.share strong{font-size:15px}.field{display:grid;gap:7px;margin-bottom:14px}.field label{font-size:12px;color:var(--muted)}input,select,textarea{width:100%;background:#101a2a;border:1px solid var(--line);border-radius:9px;padding:11px;color:var(--text);outline:none}input:focus,select:focus,textarea:focus{border-color:var(--orange)}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.stafflist{display:flex;flex-wrap:wrap;gap:8px}.stafftag{display:flex;align-items:center;gap:7px;background:#101a2a;border:1px solid var(--line);border-radius:20px;padding:8px 11px;color:var(--text)}.stafftag input{width:auto;accent-color:var(--orange)}.actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:10px}.toolbar{display:flex;flex-wrap:wrap;align-items:end;gap:10px;margin-bottom:16px}.toolbar .field{min-width:150px;margin:0}.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:680px}th,td{text-align:left;padding:12px 10px;border-bottom:1px solid var(--line);white-space:nowrap}th{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}td{font-size:13px}.empty{padding:28px;text-align:center;color:var(--muted)}.hidden{display:none!important}.notice{border:1px solid #775a35;background:#30291f;color:#ffd7a8;padding:12px 14px;border-radius:10px;line-height:1.5;margin-bottom:16px;font-size:12px}.status{font-size:12px;color:var(--muted)}.badge{display:inline-block;background:#243a3a;color:#9ce9cd;border-radius:20px;padding:5px 8px;font-size:11px}.section{display:none}.section.active{display:block}.right{display:flex;gap:8px;align-items:center}.mobilehead{display:none}
 @media(max-width:900px){.app{grid-template-columns:1fr}.side{padding:13px 14px;border-right:0;border-bottom:1px solid var(--line)}.brand{display:inline-block;margin:0}.subbrand{display:inline-block;margin:0 0 0 8px}.nav{display:flex;overflow:auto;margin-top:12px}.nav button{white-space:nowrap;padding:9px 12px}.main{padding:20px 14px}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}.grid2{grid-template-columns:1fr}}
 @media(max-width:520px){.cards{gap:9px}.card{padding:13px}.card .value{font-size:19px}.formgrid{grid-template-columns:1fr}.top h1{font-size:21px}.top{align-items:flex-start;flex-direction:column}}
+.cost-input-panel{margin:8px 0 16px;padding:14px}.cost-head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:12px}.cost-head h3{margin:0 0 4px;font-size:14px}.expense-rows{display:grid;gap:9px}.expense-row{display:grid;grid-template-columns:1.1fr 1.1fr .9fr 1.4fr auto;gap:9px;align-items:end;padding:10px;background:#101a2a;border:1px solid var(--line);border-radius:10px}.expense-row label{display:block;color:var(--muted);font-size:11px;margin-bottom:5px}.expense-row button{padding:10px}.cost-total{display:flex;justify-content:flex-end;gap:12px;align-items:center;margin-top:12px}.cost-total strong{font-size:17px;color:var(--orange)}@media(max-width:760px){.expense-row{grid-template-columns:1fr 1fr}.expense-row .remove-expense{grid-column:2;justify-self:end}}
 .login-shell{min-height:100vh;display:grid;place-items:center;padding:20px;background:radial-gradient(circle at top right,#263953,#101827 55%)}.login-card{width:min(100%,420px);background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:28px}.login-card h1{margin:24px 0 6px}.login-card .brand{margin:0}.login-card .subbrand{margin:5px 0 0}.app.hidden{display:none}</style>
 </head>
 <body>
@@ -31,7 +32,7 @@
 <section id="dashboard" class="section active">
 <div class="toolbar"><div class="field"><label>Periode dashboard</label><select id="dashPeriod"><option value="today">Hari ini</option><option value="month">Bulan ini</option><option value="all">Semua data</option></select></div><div class="field"><label>&nbsp;</label><button class="secondary" id="refreshDash">Perbarui</button></div></div>
 <div class="cards">
-<div class="card"><div class="label">TOTAL REVENUE</div><div class="value green" id="dRevenue">Rp0</div></div>
+<div class="card"><div class="label">TOTAL PENDAPATAN</div><div class="value green" id="dRevenue">Rp0</div></div>
 <div class="card"><div class="label">TOTAL PENGELUARAN</div><div class="value" id="dExpenses">Rp0</div></div>
 <div class="card"><div class="label">NET REVENUE</div><div class="value orange" id="dNet">Rp0</div></div>
 <div class="card"><div class="label">JUMLAH HARI TERCATAT</div><div class="value" id="dDays">0</div></div>
@@ -39,10 +40,11 @@
 <div class="grid2">
 <div class="panel"><h2>Pembagian hasil</h2><div class="shares">
 <div class="share"><span>Sunset Venue <span class="muted">· 25%</span></span><strong id="dSunset">Rp0</strong></div>
-<div class="share"><span>Adat <span class="muted">· 25%</span></span><strong id="dAdat">Rp0</strong></div>
+<div class="share"><span>Desa Adat <span class="muted">· 25%</span></span><strong id="dAdat">Rp0</strong></div>
 <div class="share"><span>Petugas <span class="muted">· 50%</span></span><strong id="dStaff">Rp0</strong></div>
 </div><p class="status">Bagian petugas dibagi rata berdasarkan jumlah petugas yang tercatat bertugas per hari.</p>
 <div style="margin-top:16px"><h3 style="font-size:13px;margin:0 0 10px">Rincian pendapatan petugas</h3><div id="dashStaffEarnings" class="shares"><div class="empty">Belum ada data.</div></div></div></div>
+<div class="panel"><h2>Biaya per kategori</h2><div id="dashExpenseCategories" class="shares"><div class="empty">Belum ada biaya.</div></div></div>
 <div class="panel"><h2>Aktivitas terbaru</h2><div id="recent"></div></div>
 </div>
 </section>
@@ -52,12 +54,10 @@
 <form id="dailyForm">
 <div class="formgrid">
 <div class="field"><label>Tanggal</label><input id="date" type="date" required></div>
-<div class="field"><label>Total revenue (Rp)</label><input id="revenue" type="number" min="0" step="1" placeholder="Contoh: 1500000" required></div>
+<div class="field"><label>Total pendapatan (Rp)</label><input id="revenue" type="number" min="0" step="1" placeholder="Contoh: 1500000" required></div>
 </div>
-<div class="formgrid">
-<div class="field"><label>Total pengeluaran (Rp)</label><input id="expenses" type="number" min="0" step="1" value="0" required></div>
-<div class="field"><label>Keterangan pengeluaran / catatan</label><input id="note" type="text" placeholder="Contoh: uang bensin, konsumsi, dll."></div>
-</div>
+<div class="panel cost-input-panel"><div class="cost-head"><div><h3>Biaya / Pengeluaran</h3><div class="status">Masukkan setiap pengeluaran sebagai baris terpisah.</div></div><button type="button" class="secondary" id="addExpense">＋ Tambah biaya</button></div><div id="expenseRows" class="expense-rows"></div><div class="cost-total">Total biaya: <strong id="expenseTotal">Rp0</strong></div></div>
+<div class="field" style="margin-top:14px"><label>Catatan harian (opsional)</label><input id="note" type="text" placeholder="Catatan tambahan"></div>
 <div class="field"><label>Petugas yang bertugas pada tanggal tersebut (pilih semua yang bertugas)</label><div class="stafflist" id="staffChecks"></div></div>
 <div id="preview" class="notice">Isi revenue, pengeluaran, dan petugas untuk melihat simulasi pembagian hasil.</div>
 <div class="actions"><button type="submit">Simpan data harian</button><button type="button" class="secondary" id="resetForm">Reset</button></div>
@@ -74,6 +74,7 @@
 </div>
 <div id="reportSummary" class="cards"></div>
 <div class="panel" style="padding:0;border:0"><div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>Revenue</th><th>Pengeluaran</th><th>Net</th><th>Sunset 25%</th><th>Adat 25%</th><th>Petugas 50%</th><th>Petugas bertugas</th></tr></thead><tbody id="reportRows"></tbody></table></div></div>
+<div class="panel" style="margin-top:15px"><h2>Total biaya per kategori</h2><div class="tablewrap"><table style="min-width:420px"><thead><tr><th>Kategori biaya</th><th>Total periode</th></tr></thead><tbody id="reportExpenseRows"></tbody></table></div></div>
 <div class="panel" style="margin-top:15px"><h2>Rekap pendapatan masing-masing petugas</h2><div class="tablewrap"><table style="min-width:420px"><thead><tr><th>Petugas</th><th>Hari bertugas</th><th>Total pendapatan</th></tr></thead><tbody id="reportStaffRows"></tbody></table></div></div>
 </div>
 </section>
@@ -85,7 +86,7 @@
 <div class="actions"><button id="importExcel">Import data</button><button class="secondary" id="exportExcel">Download backup Excel</button></div>
 <div id="importMessage" class="status" style="margin-top:14px"></div>
 </div>
-<div class="panel" style="margin-top:15px"><h2>Semua data tersimpan</h2><div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>Revenue</th><th>Pengeluaran</th><th>Net</th><th>Petugas</th><th>Catatan</th><th>Aksi</th></tr></thead><tbody id="historyRows"></tbody></table></div></div>
+<div class="panel" style="margin-top:15px"><h2>Semua data tersimpan</h2><div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>Pendapatan</th><th>Total biaya</th><th>Rincian biaya</th><th>Net</th><th>Petugas</th><th>Catatan</th><th>Aksi</th></tr></thead><tbody id="historyRows"></tbody></table></div></div>
 </section>
 </main>
 </div>
