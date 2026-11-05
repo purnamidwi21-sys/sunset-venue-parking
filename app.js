@@ -143,14 +143,12 @@ function staffEarnings(rows){
  });
  return STAFF.filter(name=>out[name]).map(name=>out[name]);
 }
-function dashDateRange(){const p=$('dashPreset').value,dt=today();if(p==='all')return{from:'',to:''};if(p==='thisMonth'){const m=dt.slice(0,7),last=new Date(+m.slice(0,4),+m.slice(5,7),0).getDate();return{from:m+'-01',to:m+'-'+String(last).padStart(2,'0')}}if(p==='month'){const m=$('dashMonth').value||dt.slice(0,7),last=new Date(+m.slice(0,4),+m.slice(5,7),0).getDate();return{from:m+'-01',to:m+'-'+String(last).padStart(2,'0')}}if(p==='year'){const y=$('dashYear').value||dt.slice(0,4);return{from:y+'-01-01',to:y+'-12-31'}}return{from:$('dashStart').value,to:$('dashEnd').value}}
+function dashDateRange(){const p=$('dashPreset').value,dt=today();if(p==='all')return{from:'',to:''};if(p==='month'){const m=$('dashMonth').value||dt.slice(0,7),last=new Date(+m.slice(0,4),+m.slice(5,7),0).getDate();return{from:m+'-01',to:m+'-'+String(last).padStart(2,'0')}}if(p==='year'){const y=$('dashYear').value||dt.slice(0,4);return{from:y+'-01-01',to:y+'-12-31'}}return{from:$('dashStart').value,to:$('dashEnd').value}}
 function syncDashFilters(){const p=$('dashPreset').value;document.querySelectorAll('.dash-custom').forEach(x=>x.classList.toggle('hidden',p!=='custom'));$('dashMonth').parentElement.classList.toggle('hidden',p!=='month');$('dashYear').parentElement.classList.toggle('hidden',p!=='year')}
 function drawDash(){const range=dashDateRange();let a=records.filter(r=>(!range.from||r.date>=range.from)&&(!range.to||r.date<=range.to)),t=total(a);dashRows=a;
- setText('dRevenue',money(t.rev));setText('dExpenses',money(t.exp));setText('dNet',money(t.net));setText('dDays',a.length);
+ setText('dRevenue',money(t.rev));setText('dExpenses',money(t.exp));setText('dNet',money(t.net));
  setText('dSunset',money(t.sun));setText('dAdat',money(t.adat));setText('dStaff',money(t.pool));
  const settlements=settlementRows(a);
- $('dashSettlementRows').innerHTML=settlements.length?settlements.map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+money(x.due)+'</td><td>'+money(x.paid)+'</td><td>'+money(Math.max(0,x.balance))+'</td><td>'+(admin()&&x.balance>0.009?'<button class="secondary" onclick="window.payParkingRecipient(\''+x.type+'\',\''+esc(x.name)+'\')">Bayar</button>':'—')+'</td></tr>').join(''):'<tr><td colspan="5" class="empty">Belum ada pembagian pada periode ini.</td></tr>';
- $('dashPayAllBtn').classList.toggle('hidden',!admin());$('dashPayAllBtn').disabled=totalBalance(a)<=0.009;
  const categoryTotals=expenseCategoryTotals(a);
  $('dashExpenseCategories').innerHTML=categoryTotals.length?categoryTotals.map(x=>'<div class="share"><span>'+esc(x.category)+'</span><b>'+money(x.amount)+'</b></div>').join(''):'<div class="empty">Belum ada biaya pada periode ini.</div>';
  const perStaff=staffEarnings(a);
@@ -173,7 +171,6 @@ function draw(){drawDash();drawHistory();if($('reports').classList.contains('act
 function page(p){document.querySelectorAll('.section').forEach(x=>x.classList.toggle('active',x.id===p));document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('active',x.dataset.page===p));setText('pageTitle',({dashboard:'Dashboard',entry:'Input Harian',reports:'Laporan',history:'Data Historis'})[p]);if(p==='reports')drawReport()}
 document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>page(b.dataset.page));
 window.payParkingRecipient=payRecipient;
-$('dashPayAllBtn').onclick=payAllBalances;
 function addExpenseRow(category='Jajan',amount='',description='',custom=''){
  const row=document.createElement('div');row.className='expense-row';
  row.innerHTML='<div><label>Item</label><select class="expense-kind"><option>Jajan</option><option>Kopi</option><option>Sewa DW</option><option value="__custom">Lainnya</option></select></div><div class="expense-custom hidden"><label>Nama kategori</label><input class="expense-custom-name" type="text" placeholder="Contoh: BBM"></div><div><label>Nominal (Rp)</label><input class="expense-value" type="number" min="0" step="1" placeholder="0"></div><div><label>Keterangan (opsional)</label><input class="expense-note" type="text" placeholder="Catatan"></div><button type="button" class="secondary remove-expense">Hapus</button>';
