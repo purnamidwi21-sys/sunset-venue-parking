@@ -4,6 +4,25 @@ const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6
 const db=window.supabase.createClient(URL,KEY), STAFF=['Pak Manik','Pak Bayu','Pak Gangga','Pak Riky','Dek Putra'];
 let user=null,profile=null,staffRows=[],records=[],report=[],dashRows=[],payouts=[],paymentBusy=false,realtimeChannel=null,refreshTimer=null;
 const $=id=>document.getElementById(id), setText=(id,value)=>{const el=$(id);if(el)el.textContent=String(value??'')}, money=n=>new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(n)||0);
+const parseAmount=value=>{
+ if(typeof value==='number')return Number.isFinite(value)?value:0;
+ let s=String(value??'').trim();
+ if(!s)return 0;
+ s=s.replace(/\s|Rp/gi,'').replace(/[^0-9,.-]/g,'');
+ const comma=s.lastIndexOf(','),dot=s.lastIndexOf('.');
+ if(comma>=0&&dot>=0){
+  if(comma>dot)s=s.replace(/\./g,'').replace(',','.');
+  else s=s.replace(/,/g,'');
+ }else if(comma>=0){
+  const parts=s.split(',');
+  s=parts.length>2?parts.join(''):parts[0]+'.'+parts.slice(1).join('');
+ }else if(dot>=0){
+  const parts=s.split('.');
+  if(parts.length>2||parts.slice(1).every(p=>p.length===3))s=parts.join('');
+ }
+ const n=Number(s);
+ return Number.isFinite(n)?n:0;
+};
 const today=()=>{let d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')};
 const admin=()=>profile?.role==='admin', esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const calc=r=>{let n=Number(r.revenue)-Number(r.expenses),p=n*.5;return{net:n,sunset:n*.25,adat:n*.25,pool:p,each:r.staff.length?p/r.staff.length:0}};
@@ -250,8 +269,8 @@ $('importExcel').onclick=async()=>{
    if(Object.prototype.hasOwnProperty.call(o,'kategori')){
     const category=String(o.kategori??'').trim().toLowerCase().replace(/\s+/g,' ');
     const description=String(o.keterangan??'').trim();
-    const incoming=Number(String(o.pemasukan??'').replace(/[^0-9.-]/g,''))||0;
-    const outgoing=Number(String(o.pengeluaran??'').replace(/[^0-9.-]/g,''))||0;
+    const incoming=parseAmount(o.pemasukan);
+    const outgoing=parseAmount(o.pengeluaran);
     if(!['biaya','pendapatan','petugas parkir','setoran'].includes(category)){skipped++;continue}
     let rec=grouped.get(date);
     if(!rec){rec={date,revenue:0,expenses:0,expenseItems:[],staff:[],note:'',source:'excel_import'};grouped.set(date,rec)}
@@ -275,9 +294,9 @@ $('importExcel').onclick=async()=>{
    }
    const revenueCell=o.revenue??o.totalrevenue??o.pendapatan??'';
    const revenueText=String(revenueCell??'').trim();
-   const rev=revenueText===''?0:Number(String(revenueCell).replace(/[^0-9.-]/g,''));
+   const rev=revenueText===''?0:parseAmount(revenueCell);
    const legacyCell=o.pengeluaran??o.expenses??o.totalpengeluaran??0;
-   const legacyExp=Number(String(legacyCell??'').replace(/[^0-9.-]/g,''))||0;
+   const legacyExp=parseAmount(legacyCell);
    if(!date||!Number.isFinite(rev)||!Number.isFinite(legacyExp)||rev<0||legacyExp<0){skipped++;continue}
    const names=String(o.petugas??o.staff??'').split(/[,;|]/).map(x=>x.trim()).filter(x=>STAFF.includes(x));
    const note=String(o.catatan??o.note??'').trim();
@@ -294,7 +313,7 @@ $('importExcel').onclick=async()=>{
     }
     const category=String(o.itempengeluaran??o.itembiaya??o.item??'').trim();
     const amountCell=o.nominal??o.nominalpengeluaran??o.nominalbiaya??'';
-    const amount=Number(String(amountCell??'').replace(/[^0-9.-]/g,''))||0;
+    const amount=parseAmount(amountCell);
     const description=String(o.keterangan??o.description??'').trim();
     if(category&&amount>0)rec.expenseItems.push({category,amount,description});
     else if(!category&&amount>0)skipped++;
@@ -307,7 +326,7 @@ $('importExcel').onclick=async()=>{
     let m=key.match(/^(itempengeluaran|itembiaya)(\d+)$/);
     if(m){const n=Number(m[2]);manualSlots[n]=manualSlots[n]||{};manualSlots[n].category=String(o[key]??'').trim();manualSlotKeys.add(key);return}
     m=key.match(/^(nominalpengeluaran|nominalbiaya)(\d+)$/);
-    if(m){const n=Number(m[2]);manualSlots[n]=manualSlots[n]||{};manualSlots[n].amount=Number(String(o[key]??'').replace(/[^0-9.-]/g,''))||0;manualSlotKeys.add(key);return}
+    if(m){const n=Number(m[2]);manualSlots[n]=manualSlots[n]||{};manualSlots[n].amount=parseAmount(o[key]);manualSlotKeys.add(key);return}
     m=key.match(/^(keteranganpengeluaran|keteranganbiaya)(\d+)$/);
     if(m){const n=Number(m[2]);manualSlots[n]=manualSlots[n]||{};manualSlots[n].description=String(o[key]??'').trim();manualSlotKeys.add(key)}
    });
@@ -318,7 +337,7 @@ $('importExcel').onclick=async()=>{
    const ignoredKeys=new Set(['tanggal','date','tgl','revenue','totalrevenue','pendapatan','pengeluaran','expenses','totalpengeluaran','petugas','staff','catatan','note']);
    Object.keys(o).forEach(key=>{
     if(ignoredKeys.has(key)||manualSlotKeys.has(key)||/^(itempengeluaran|itembiaya|nominalpengeluaran|nominalbiaya|keteranganpengeluaran|keteranganbiaya)\d+$/.test(key))return;
-    const amount=Number(String(o[key]??'').replace(/[^0-9.-]/g,''));
+    const amount=parseAmount(o[key]);
     if(!Number.isFinite(amount)||amount<=0)return;
     const category=knownExpenseKeys[key]||key;
     expenseItems.push({category,amount,description:'Diimpor dari kolom '+category});
