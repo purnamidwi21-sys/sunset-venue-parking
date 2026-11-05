@@ -171,22 +171,18 @@ function draw(){drawDash();drawHistory();if($('reports').classList.contains('act
 function page(p){document.querySelectorAll('.section').forEach(x=>x.classList.toggle('active',x.id===p));document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('active',x.dataset.page===p));setText('pageTitle',({dashboard:'Dashboard',entry:'Input Harian',reports:'Laporan',history:'Data Historis'})[p]);if(p==='reports')drawReport()}
 document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>page(b.dataset.page));
 window.payParkingRecipient=payRecipient;
-function addExpenseRow(category='Jajan',amount='',description='',custom=''){
+function addExpenseRow(category='Jajan',amount='',description=''){
  const row=document.createElement('div');row.className='expense-row';
- row.innerHTML='<div><label>Item</label><select class="expense-kind"><option>Jajan</option><option>Kopi</option><option>Sewa DW</option><option value="__custom">Lainnya</option></select></div><div class="expense-custom hidden"><label>Nama kategori</label><input class="expense-custom-name" type="text" placeholder="Contoh: BBM"></div><div><label>Nominal (Rp)</label><input class="expense-value" type="number" min="0" step="1" placeholder="0"></div><div><label>Keterangan (opsional)</label><input class="expense-note" type="text" placeholder="Catatan"></div><button type="button" class="secondary remove-expense">Hapus</button>';
+ row.innerHTML='<div><label>Item pengeluaran</label><input class="expense-kind" type="text" placeholder="Contoh: Jajan, Kopi, BBM"></div><div><label>Nominal (Rp)</label><input class="expense-value" type="number" min="0" step="1" placeholder="0"></div><div><label>Keterangan (opsional)</label><input class="expense-note" type="text" placeholder="Catatan"></div><button type="button" class="secondary remove-expense">Hapus</button>';
  $('expenseRows').appendChild(row);
- row.querySelector('.expense-kind').value=['Jajan','Kopi','Sewa DW'].includes(category)?category:'__custom';
- row.querySelector('.expense-custom').classList.toggle('hidden',row.querySelector('.expense-kind').value!=='__custom');
- row.querySelector('.expense-custom-name').value=custom||(!['Jajan','Kopi','Sewa DW'].includes(category)?category:'');
- row.querySelector('.expense-value').value=amount;row.querySelector('.expense-note').value=description;preview();
+ row.querySelector('.expense-kind').value=category||'';row.querySelector('.expense-value').value=amount;row.querySelector('.expense-note').value=description;preview();
 }
 function collectExpenseItems(){
  const items=[];
  for(const row of $('expenseRows').querySelectorAll('.expense-row')){
-  const kind=row.querySelector('.expense-kind').value,amount=Number(row.querySelector('.expense-value').value)||0;
+  const category=row.querySelector('.expense-kind').value.trim(),amount=Number(row.querySelector('.expense-value').value)||0;
   if(amount<=0)continue;
-  const category=kind==='__custom'?row.querySelector('.expense-custom-name').value.trim():kind;
-  if(!category)throw new Error('Isi nama kategori untuk biaya Lainnya.');
+  if(!category)throw new Error('Isi nama item pengeluaran.');
   items.push({category,amount,description:row.querySelector('.expense-note').value.trim()});
  }
  return items;
@@ -198,7 +194,7 @@ function preview(){
  $('preview').innerHTML='<div class="preview-line"><span>Total biaya:</span> <b>'+money(exp)+'</b> <span class="preview-dot">·</span> <span>Net revenue:</span> <b>'+money(net)+'</b></div><div class="preview-line"><span>Sunset Venue 25%:</span> <b>'+money(net*.25)+'</b> <span class="preview-dot">·</span> <span>Desa Adat 25%:</span> <b>'+money(net*.25)+'</b> <span class="preview-dot">·</span> <span>Petugas 50%:</span> <b>'+money(pool)+'</b> <span class="preview-count">('+st.length+' orang'+(st.length?' · '+money(pool/st.length)+' per orang':' · pilih petugas')+')</span></div>';
 }
 $('dailyForm').addEventListener('input',preview);
-$('dailyForm').addEventListener('change',e=>{if(e.target.classList.contains('expense-kind'))e.target.closest('.expense-row').querySelector('.expense-custom').classList.toggle('hidden',e.target.value!=='__custom');preview()});
+$('dailyForm').addEventListener('change',preview);
 $('expenseRows').addEventListener('click',e=>{if(e.target.classList.contains('remove-expense')){e.target.closest('.expense-row').remove();preview()}});
 $('addExpense').onclick=()=>addExpenseRow();
 $('dailyForm').onsubmit=async e=>{
