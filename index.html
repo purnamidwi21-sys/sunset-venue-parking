@@ -180,17 +180,44 @@ button{font-size:16px;min-height:46px}
  #dailyForm .cost-total{padding:12px}
 }
 
-/* Reports: same period controls as dashboard and aligned staff selector */
-.report-period-toolbar{grid-template-columns:minmax(150px,1fr) minmax(150px,1fr) minmax(170px,.9fr) minmax(150px,.85fr) auto auto;gap:12px;align-items:end}
-.report-period-toolbar>.field{min-width:0;margin:0}
-.report-period-toolbar>.report-custom{grid-column:auto}
-.report-period-toolbar>.dash-month,.report-period-toolbar>.dash-year{grid-column:auto}
-.report-period-toolbar>button{white-space:nowrap;align-self:end}
+/* Reports: responsive filter and action layout */
+.report-period-toolbar{
+ display:grid;
+ grid-template-columns:repeat(4,minmax(0,1fr));
+ gap:14px;
+ align-items:end;
+}
+.report-period-toolbar>.field{min-width:0;width:100%;margin:0}
+.report-period-toolbar>.report-custom,
+.report-period-toolbar>.dash-month,
+.report-period-toolbar>.dash-year{grid-column:auto}
+.report-period-toolbar>button{
+ width:100%;
+ min-width:0;
+ white-space:normal;
+ align-self:end;
+ grid-column:span 2;
+}
+.report-period-toolbar>button:nth-last-child(2){grid-column:1 / span 2}
+.report-period-toolbar>button:last-child{grid-column:3 / span 2}
 .report-staff-toolbar{display:flex;align-items:end;gap:12px}
 .report-staff-field{width:min(100%,360px);min-width:240px;margin:0}
 #reportStaffFilter{width:100%;padding:12px 46px 12px 14px;appearance:none;-webkit-appearance:none;background-color:#fff;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2353657d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 15px center;background-size:16px}
-@media(max-width:1100px){.report-period-toolbar{grid-template-columns:repeat(2,minmax(0,1fr))}.report-period-toolbar>button{width:100%}}
-@media(max-width:600px){.report-period-toolbar{grid-template-columns:1fr 1fr}.report-period-toolbar>.report-custom{grid-column:auto}.report-period-toolbar>.field:nth-child(3),.report-period-toolbar>.dash-month,.report-period-toolbar>.dash-year{grid-column:1/-1}.report-period-toolbar>button{grid-column:1/-1}.report-staff-field{width:100%;min-width:0}}
+@media(max-width:900px){
+ .report-period-toolbar{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+ .report-period-toolbar>button:nth-last-child(2){grid-column:1}
+ .report-period-toolbar>button:last-child{grid-column:2}
+}
+@media(max-width:600px){
+ .report-period-toolbar{grid-template-columns:1fr 1fr;gap:10px}
+ .report-period-toolbar>.report-custom{grid-column:span 1}
+ .report-period-toolbar>.field:nth-child(3),
+ .report-period-toolbar>.dash-month,
+ .report-period-toolbar>.dash-year{grid-column:1/-1}
+ .report-period-toolbar>button:nth-last-child(2),
+ .report-period-toolbar>button:last-child{grid-column:1/-1}
+ .report-staff-field{width:100%;min-width:0}
+}
 </style>
 </head>
 <body>
@@ -271,5 +298,5 @@ button{font-size:16px;min-height:46px}
 </section>
 </main>
 </div>
-<script src="app.js?v=import-fix-20261106"></script>
+<script src="app.js?v=report-date-layout-20261106"></script>
 </body></html>
