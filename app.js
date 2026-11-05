@@ -195,6 +195,15 @@ function preview(){
  setText('expenseTotal',money(exp));
  $('preview').innerHTML='<div class="preview-line"><span>Total biaya:</span> <b>'+money(exp)+'</b> <span class="preview-dot">·</span> <span>Net revenue:</span> <b>'+money(net)+'</b></div><div class="preview-line"><span>Sunset Venue 25%:</span> <b>'+money(net*.25)+'</b> <span class="preview-dot">·</span> <span>Desa Adat 25%:</span> <b>'+money(net*.25)+'</b> <span class="preview-dot">·</span> <span>Petugas 50%:</span> <b>'+money(pool)+'</b> <span class="preview-count">('+st.length+' orang'+(st.length?' · '+money(pool/st.length)+' per orang':' · pilih petugas')+')</span></div>';
 }
+// Enter sebagai pintasan utama di seluruh aplikasi
+document.addEventListener('keydown',e=>{
+ if(e.key!=='Enter'||e.isComposing||e.shiftKey)return;
+ const el=e.target;
+ if(!el||el.tagName==='TEXTAREA'||el.tagName==='BUTTON'||el.tagName==='SELECT'||el.type==='file'||el.type==='checkbox'||el.type==='radio')return;
+ if(el.closest('#loginForm')){e.preventDefault();$('loginForm').requestSubmit();return}
+ if(el.closest('#dailyForm')){e.preventDefault();$('dailyForm').requestSubmit();return}
+ if(el.closest('#reports')){e.preventDefault();drawReport()}
+});
 $('dailyForm').addEventListener('input',preview);
 $('dailyForm').addEventListener('change',preview);
 $('expenseRows').addEventListener('click',e=>{if(e.target.classList.contains('remove-expense')){e.target.closest('.expense-row').remove();preview()}});
