@@ -102,7 +102,7 @@ async function payRecipient(type,name){
  const pending=settlementLines(dashRows).filter(x=>x.type===type&&x.name===name&&x.balance>0.009);
  if(!pending.length){alert('Tidak ada saldo yang perlu dibayarkan untuk penerima ini.');return}
  const amount=pending.reduce((s,x)=>s+x.balance,0),method='Tunai';
- if(!confirm('Konfirmasi pembayaran '+name+' sebesar '+money(amount)+' untuk periode laporan ini? Catat hanya setelah uang benar-benar dibayarkan.'))return;
+ if(!confirm('Konfirmasi pembayaran '+name+' sebesar '+money(amount)+' untuk periode dashboard yang dipilih? Catat hanya setelah uang benar-benar dibayarkan.'))return;
  paymentBusy=true;
  try{
   const rowsToInsert=pending.map(x=>({daily_record_id:x.recordId,recipient_type:x.type,recipient_name:x.name,amount:Number(x.balance.toFixed(2)),payment_method:method,paid_by:user.id}));
