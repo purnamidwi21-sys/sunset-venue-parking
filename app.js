@@ -2,7 +2,7 @@
 const URL='https://dsvdtqypumwjevgtoghr.supabase.co';
 const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRzdmR0cXlwdW13amV2Z3RvZ2hyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM4NzczNDUsImV4cCI6MjEwOTQ1MzM0NX0.VoCbLhxttbPPKtNqKaQPC-XQaHg9q48V5vyL0eDpZko';
 const db=window.supabase.createClient(URL,KEY), STAFF=['Pak Gangga','Pak Manik','Pak Bayu','Pak Dek Putra','Pak Riki'];
-let user=null,profile=null,staffRows=[],records=[],report=[],payouts=[];
+let user=null,profile=null,staffRows=[],records=[],report=[],payouts=[],paymentBusy=false;
 const $=id=>document.getElementById(id), money=n=>new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(n)||0);
 const today=()=>{let d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')};
 const admin=()=>profile?.role==='admin', esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -21,7 +21,7 @@ async function sessionStart(){
  await loadData();draw();
 }
 async function loadData(){
- const [s,d,j,e]=await Promise.all([
+ const [s,d,j,e,p]=await Promise.all([
   db.from('staff').select('id,full_name').eq('active',true),
   db.from('daily_records').select('*').order('record_date'),
   db.from('staff_duty').select('*'),
@@ -99,25 +99,35 @@ function settlementRows(rows){
 function totalBalance(rows){return settlementLines(rows).reduce((s,x)=>s+Math.max(0,x.balance),0)}
 async function payRecipient(type,name){
  if(!admin()){alert('Hanya Admin yang dapat mencatat pembayaran.');return}
+ if(paymentBusy)return;
  const pending=settlementLines(report).filter(x=>x.type===type&&x.name===name&&x.balance>0.009);
  if(!pending.length){alert('Tidak ada saldo yang perlu dibayarkan untuk penerima ini.');return}
  const amount=pending.reduce((s,x)=>s+x.balance,0),method=$('paymentMethod').value;
  if(!confirm('Konfirmasi pembayaran '+name+' sebesar '+money(amount)+' untuk periode laporan ini? Catat hanya setelah uang benar-benar dibayarkan.'))return;
- const rowsToInsert=pending.map(x=>({daily_record_id:x.recordId,recipient_type:x.type,recipient_name:x.name,amount:Number(x.balance.toFixed(2)),payment_method:method,paid_by:user.id}));
- const {error}=await db.from('payout_payments').insert(rowsToInsert);
- if(error){alert('Pembayaran gagal dicatat: '+error.message);return}
- await loadData();draw();
+ paymentBusy=true;
+ try{
+  const rowsToInsert=pending.map(x=>({daily_record_id:x.recordId,recipient_type:x.type,recipient_name:x.name,amount:Number(x.balance.toFixed(2)),payment_method:method,paid_by:user.id}));
+  const {error}=await db.from('payout_payments').insert(rowsToInsert);
+  if(error)throw error;
+  await loadData();draw();
+ }catch(e){alert('Pembayaran gagal dicatat: '+e.message)}
+ finally{paymentBusy=false}
 }
 async function payAllBalances(){
  if(!admin()){alert('Hanya Admin yang dapat mencatat pembayaran.');return}
+ if(paymentBusy)return;
  const pending=settlementLines(report).filter(x=>x.balance>0.009);
  if(!pending.length){alert('Semua saldo pada periode ini sudah lunas.');return}
  const amount=pending.reduce((s,x)=>s+x.balance,0),method=$('paymentMethod').value;
  if(!confirm('Catat pembayaran SELURUH sisa saldo untuk '+pending.length+' bagian penerima, total '+money(amount)+'? Pastikan seluruh uang sudah benar-benar dibayarkan.'))return;
- const rowsToInsert=pending.map(x=>({daily_record_id:x.recordId,recipient_type:x.type,recipient_name:x.name,amount:Number(x.balance.toFixed(2)),payment_method:method,paid_by:user.id}));
- const {error}=await db.from('payout_payments').insert(rowsToInsert);
- if(error){alert('Pembayaran gagal dicatat: '+error.message);return}
- await loadData();draw();
+ paymentBusy=true;
+ try{
+  const rowsToInsert=pending.map(x=>({daily_record_id:x.recordId,recipient_type:x.type,recipient_name:x.name,amount:Number(x.balance.toFixed(2)),payment_method:method,paid_by:user.id}));
+  const {error}=await db.from('payout_payments').insert(rowsToInsert);
+  if(error)throw error;
+  await loadData();draw();
+ }catch(e){alert('Pembayaran gagal dicatat: '+e.message)}
+ finally{paymentBusy=false}
 }
 function staffEarnings(rows){
  const out={};
