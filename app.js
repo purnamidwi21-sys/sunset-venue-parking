@@ -223,29 +223,79 @@ $('fromDate').onchange=drawReport;$('toDate').onchange=drawReport;$('reportPrese
 $('waReport').onclick=async()=>{let d=pdf();if(!d)return;let file=new File([d.output('blob')],'Sunset-Parking-Report.pdf',{type:'application/pdf'});if(navigator.canShare?.({files:[file]})){try{await navigator.share({files:[file],title:'Laporan Sunset Venue Parking'});return}catch(e){if(e.name==='AbortError')return}}d.save('Sunset-Parking-Report.pdf');window.open('https://wa.me/?text='+encodeURIComponent('Laporan Sunset Venue Parking. PDF sudah diunduh, silakan lampirkan file PDF di WhatsApp.'),'_blank')};
 function dateParse(v){if(v instanceof Date)return [v.getFullYear(),String(v.getMonth()+1).padStart(2,'0'),String(v.getDate()).padStart(2,'0')].join('-');if(typeof v==='number'){let d=XLSX.SSF.parse_date_code(v);if(d)return[d.y,String(d.m).padStart(2,'0'),String(d.d).padStart(2,'0')].join('-')}let s=String(v||'').trim();if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;let p=s.split(/[\/.-]/);if(p.length===3)return p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0');return''}
 $('importExcel').onclick=async()=>{
- if(!admin()){alert('Khusus Admin.');return}let f=$('excelFile').files[0];if(!f){alert('Pilih file Excel/CSV.');return}
- try{let wb=XLSX.read(await f.arrayBuffer(),{type:'array',cellDates:true}),rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''}),added=0,updated=0,skipped=0;
- for(let row of rows){let o={};Object.keys(row).forEach(k=>o[k.toLowerCase().replace(/[^a-z0-9]/g,'')]=row[k]);let date=dateParse(o.tanggal??o.date??o.tgl),rev=Number(String(o.revenue??o.totalrevenue??o.pendapatan??'').replace(/[^0-9.-]/g,'')),legacyExp=Number(String(o.pengeluaran??o.expenses??o.totalpengeluaran??0).replace(/[^0-9.-]/g,''));if(!date||!Number.isFinite(rev)||!Number.isFinite(legacyExp)||rev<0||legacyExp<0){skipped++;continue}
- let expenseItems=[];const knownExpenseKeys={jajan:'Jajan',kopi:'Kopi',sewadw:'Sewa DW'};
- const manualSlots={};const manualSlotKeys=new Set();
- Object.keys(o).forEach(key=>{
-  let m=key.match(/^(itempengeluaran|itembiaya)(\d+)$/);
-  if(m){const n=Number(m[2]);manualSlots[n]=manualSlots[n]||{};manualSlots[n].category=String(o[key]??'').trim();manualSlotKeys.add(key);return}
-  m=key.match(/^(nominalpengeluaran|nominalbiaya)(\d+)$/);
-  if(m){const n=Number(m[2]);manualSlots[n]=manualSlots[n]||{};manualSlots[n].amount=Number(String(o[key]??'').replace(/[^0-9.-]/g,''))||0;manualSlotKeys.add(key);return}
-  m=key.match(/^(keteranganpengeluaran|keteranganbiaya)(\d+)$/);
-  if(m){const n=Number(m[2]);manualSlots[n]=manualSlots[n]||{};manualSlots[n].description=String(o[key]??'').trim();manualSlotKeys.add(key)}
- });
- Object.keys(manualSlots).map(Number).sort((a,b)=>a-b).forEach(n=>{
-  const item=manualSlots[n];
-  if(item.category&&item.amount>0)expenseItems.push({category:item.category,amount:item.amount,description:item.description||''});
- });
- const ignoredKeys=new Set(['tanggal','date','tgl','revenue','totalrevenue','pendapatan','pengeluaran','expenses','totalpengeluaran','petugas','staff','catatan','note']);
- Object.keys(o).forEach(key=>{if(ignoredKeys.has(key)||manualSlotKeys.has(key)||/^(itempengeluaran|itembiaya|nominalpengeluaran|nominalbiaya|keteranganpengeluaran|keteranganbiaya)\d+$/.test(key))return;const amount=Number(String(o[key]??'').replace(/[^0-9.-]/g,''));if(!Number.isFinite(amount)||amount<=0)return;const category=knownExpenseKeys[key]||key;expenseItems.push({category,amount,description:'Diimpor dari kolom '+category})});
- if(!expenseItems.length&&legacyExp>0)expenseItems=[{category:'Biaya lama (belum dirinci)',amount:legacyExp,description:'Diimpor dari kolom pengeluaran total'}];
- let exp=expenseItems.reduce((s,x)=>s+x.amount,0);let names=String(o.petugas??o.staff??'').split(/[,;|]/).map(x=>x.trim()).filter(x=>STAFF.includes(x));let exists=records.some(x=>x.date===date);try{await saveRecord({date,revenue:rev,expenses:exp,expenseItems,staff:names,note:String(o.catatan??o.note??''),source:'excel_import'});if(exists)updated++;else added++}catch(e){skipped++}}
- await db.from('import_history').insert({file_name:f.name,rows_read:rows.length,rows_added:added,rows_updated:updated,rows_skipped:skipped,imported_by:user.id});
- setText('importMessage','Import selesai: '+added+' baru, '+updated+' diperbarui, '+skipped+' dilewati.');draw();
+ if(!admin()){alert('Khusus Admin.');return}
+ let f=$('excelFile').files[0];
+ if(!f){alert('Pilih file Excel/CSV.');return}
+ try{
+  let wb=XLSX.read(await f.arrayBuffer(),{type:'array',cellDates:true});
+  let rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});
+  let added=0,updated=0,skipped=0;
+  const grouped=new Map();
+  for(const row of rows){
+   let o={};
+   Object.keys(row).forEach(k=>o[k.toLowerCase().replace(/[^a-z0-9]/g,'')]=row[k]);
+   const date=dateParse(o.tanggal??o.date??o.tgl);
+   const revenueCell=o.revenue??o.totalrevenue??o.pendapatan??'';
+   const revenueText=String(revenueCell??'').trim();
+   const rev=revenueText===''?0:Number(String(revenueCell).replace(/[^0-9.-]/g,''));
+   const legacyCell=o.pengeluaran??o.expenses??o.totalpengeluaran??0;
+   const legacyExp=Number(String(legacyCell??'').replace(/[^0-9.-]/g,''))||0;
+   if(!date||!Number.isFinite(rev)||!Number.isFinite(legacyExp)||rev<0||legacyExp<0){skipped++;continue}
+   const names=String(o.petugas??o.staff??'').split(/[,;|]/).map(x=>x.trim()).filter(x=>STAFF.includes(x));
+   const note=String(o.catatan??o.note??'').trim();
+   const isLongExpenseFormat=Object.prototype.hasOwnProperty.call(o,'itempengeluaran')||
+    Object.prototype.hasOwnProperty.call(o,'itembiaya')||
+    (Object.prototype.hasOwnProperty.call(o,'item')&&Object.prototype.hasOwnProperty.call(o,'nominal'));
+   if(isLongExpenseFormat){
+    let rec=grouped.get(date);
+    if(!rec){rec={date,revenue:rev,expenses:0,expenseItems:[],staff:names,note,source:'excel_import'};grouped.set(date,rec)}
+    else{
+     if(revenueText!=='')rec.revenue=rev;
+     if(names.length)rec.staff=names;
+     if(note)rec.note=note;
+    }
+    const category=String(o.itempengeluaran??o.itembiaya??o.item??'').trim();
+    const amountCell=o.nominal??o.nominalpengeluaran??o.nominalbiaya??'';
+    const amount=Number(String(amountCell??'').replace(/[^0-9.-]/g,''))||0;
+    const description=String(o.keterangan??o.description??'').trim();
+    if(category&&amount>0)rec.expenseItems.push({category,amount,description});
+    else if(!category&&amount>0)skipped++;
+    continue;
+   }
+   let expenseItems=[];
+   const knownExpenseKeys={jajan:'Jajan',kopi:'Kopi',sewadw:'Sewa DW'};
+   const manualSlots={},manualSlotKeys=new Set();
+   Object.keys(o).forEach(key=>{
+    let m=key.match(/^(itempengeluaran|itembiaya)(\d+)$/);
+    if(m){const n=Number(m[2]);manualSlots[n]=manualSlots[n]||{};manualSlots[n].category=String(o[key]??'').trim();manualSlotKeys.add(key);return}
+    m=key.match(/^(nominalpengeluaran|nominalbiaya)(\d+)$/);
+    if(m){const n=Number(m[2]);manualSlots[n]=manualSlots[n]||{};manualSlots[n].amount=Number(String(o[key]??'').replace(/[^0-9.-]/g,''))||0;manualSlotKeys.add(key);return}
+    m=key.match(/^(keteranganpengeluaran|keteranganbiaya)(\d+)$/);
+    if(m){const n=Number(m[2]);manualSlots[n]=manualSlots[n]||{};manualSlots[n].description=String(o[key]??'').trim();manualSlotKeys.add(key)}
+   });
+   Object.keys(manualSlots).map(Number).sort((a,b)=>a-b).forEach(n=>{
+    const item=manualSlots[n];
+    if(item.category&&item.amount>0)expenseItems.push({category:item.category,amount:item.amount,description:item.description||''});
+   });
+   const ignoredKeys=new Set(['tanggal','date','tgl','revenue','totalrevenue','pendapatan','pengeluaran','expenses','totalpengeluaran','petugas','staff','catatan','note']);
+   Object.keys(o).forEach(key=>{
+    if(ignoredKeys.has(key)||manualSlotKeys.has(key)||/^(itempengeluaran|itembiaya|nominalpengeluaran|nominalbiaya|keteranganpengeluaran|keteranganbiaya)\d+$/.test(key))return;
+    const amount=Number(String(o[key]??'').replace(/[^0-9.-]/g,''));
+    if(!Number.isFinite(amount)||amount<=0)return;
+    const category=knownExpenseKeys[key]||key;
+    expenseItems.push({category,amount,description:'Diimpor dari kolom '+category});
+   });
+   if(!expenseItems.length&&legacyExp>0)expenseItems=[{category:'Biaya lama (belum dirinci)',amount:legacyExp,description:'Diimpor dari kolom pengeluaran total'}];
+   grouped.set(date,{date,revenue:rev,expenses:expenseItems.reduce((sum,x)=>sum+x.amount,0),expenseItems,staff:names,note,source:'excel_import'});
+  }
+  for(const rec of grouped.values()){
+   rec.expenses=(rec.expenseItems||[]).reduce((sum,x)=>sum+Number(x.amount||0),0);
+   const exists=records.some(x=>x.date===rec.date);
+   try{await saveRecord(rec);if(exists)updated++;else added++}
+   catch(e){skipped++}
+  }
+  await db.from('import_history').insert({file_name:f.name,rows_read:rows.length,rows_added:added,rows_updated:updated,rows_skipped:skipped,imported_by:user.id});
+  setText('importMessage','Import selesai: '+added+' baru, '+updated+' diperbarui, '+skipped+' baris dilewati.');draw();
  }catch(e){setText('importMessage','Import gagal: '+e.message)}
 };
 $('exportExcel').onclick=()=>{
