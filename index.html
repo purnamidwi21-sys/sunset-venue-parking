@@ -14,7 +14,8 @@
 .login-shell{min-height:100vh;display:grid;place-items:center;padding:20px;background:radial-gradient(circle at top right,#263953,#101827 55%)}.login-card{width:min(100%,420px);background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:28px}.login-card h1{margin:24px 0 6px}.login-card .brand{margin:0}.login-card .subbrand{margin:5px 0 0}.app.hidden{display:none}</style>
 </head>
 <body>
-<div class="app">
+<div id="loginScreen" class="login-shell"><form id="loginForm" class="login-card"><div class="brand">SUNSET VENUE</div><div class="subbrand">PARKING FINANCE SYSTEM</div><h1>Login</h1><p class="muted">Masuk menggunakan akun dari administrator.</p><div class="field"><label>Email</label><input id="loginEmail" type="email" autocomplete="username" required></div><div class="field"><label>Password</label><input id="loginPassword" type="password" autocomplete="current-password" required></div><button id="loginButton" style="width:100%">Masuk</button><div id="loginMessage" class="status" style="margin-top:12px"></div></form></div>
+<div id="app" class="app hidden">
 <aside class="side">
 <div class="brand">SUNSET VENUE</div><div class="subbrand">PARKING FINANCE</div>
 <nav class="nav">
