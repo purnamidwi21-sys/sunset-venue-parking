@@ -80,3 +80,11 @@ If historical records have no staff roster, the 50% staff pool can still be calc
 - Each line has an amount and optional description. Total expenses are calculated automatically.
 - Period reports show total for each expense category and each attendant's total share.
 - Previously stored expense totals remain visible as "Biaya lama (belum dirinci)" until recorded with a category breakdown.
+
+
+## Profit-share payments and balances
+- Each daily share creates an amount payable to Sunset Venue, Desa Adat, and the attendants on duty.
+- The Reports page shows amount due, amount paid, and outstanding balance for the selected date range.
+- Admin can record payment for one recipient or record all outstanding balances as paid in one action.
+- Each payment is stored with the underlying daily record, payment method, timestamp, and admin account.
+- The balance becomes Rp0 only after payment is recorded; the button does not transfer funds. Confirm it only after the money has actually been handed over or transferred.
