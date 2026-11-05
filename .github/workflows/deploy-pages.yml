@@ -1,3 +1,4 @@
+# Fresh deployment trigger after GitHub Pages source reset
 name: Deploy Sunset Venue Parking to GitHub Pages
 
 on:
