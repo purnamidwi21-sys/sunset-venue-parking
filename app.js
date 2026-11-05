@@ -39,7 +39,7 @@ async function loadData(){
   const sum=items.reduce((s,z)=>s+z.amount,0);
   return{id:x.id,date:x.record_date,revenue:Number(x.total_revenue),expenses:items.length?sum:legacy,expenseItems:items,note:x.note||'',staff:(duty[x.id]||[]).filter(Boolean),source:x.source};
  });
- $('staffChecks').innerHTML='<label class="stafftag staff-all"><input type="checkbox" id="stAll">Semua Bertugas</label>'+STAFF.map((x,i)=>'<label class="stafftag"><input type="checkbox" id="st'+i+'">'+x+'</label>').join('');
+ $('staffChecks').innerHTML=STAFF.map((x,i)=>'<label class="stafftag"><input type="checkbox" id="st'+i+'">'+x+'</label>').join('')+'<label class="stafftag staff-all"><input type="checkbox" id="stAll">Semua Bertugas</label>';
  const all=$('stAll');
  if(all)all.onchange=()=>{STAFF.forEach((x,i)=>{const el=$('st'+i);if(el)el.checked=all.checked});preview()};
  STAFF.forEach((x,i)=>{const el=$('st'+i);if(el)el.onchange=()=>{if(all)all.checked=STAFF.every((n,k)=>$('st'+k)?.checked);preview()}});
