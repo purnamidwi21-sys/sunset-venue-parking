@@ -11,18 +11,18 @@ Staff-only parking finance application for Sunset Venue.
 ## Current features
 - Email/password login.
 - Admin and Staff roles.
-- Daily revenue and expense entry.
+- Daily revenue entry and itemized expenses by category (Jajan, Kopi, Sewa DW, and custom categories).
 - Select the five registered parking attendants.
 - Automatic profit share: Sunset Venue 25%, Adat 25%, staff pool 50%.
 - Staff pool split equally among staff on duty on that date.
-- Dashboard and custom date-range reports.
+- Dashboard and custom date-range reports with expense totals per category and earnings per attendant.
 - Historical XLSX/XLS/CSV import (Admin only).
 - Excel backup export.
 - PDF download and WhatsApp share where browser file-sharing is supported.
 
 ## Supabase setup (required once)
 1. Open the Supabase project SQL Editor.
-2. Open `schema.sql` in this repository, copy its full contents, paste into SQL Editor, and click Run.
+2. For a new database, run all of `schema.sql`. For the existing project, run `upgrade_expense_items.sql` once to add itemized expense storage.
 3. In Supabase Authentication settings, create the first user (the administrator) with email and password.
 4. In SQL Editor, promote that user to Admin by running this query, replacing the email:
    ```sql
@@ -48,9 +48,10 @@ The repository includes `.github/workflows/deploy-pages.yml`.
 The first worksheet must have a header row. Required columns:
 - Date: Tanggal, Date, or Tgl
 - Revenue: Revenue, Total Revenue, or Pendapatan
-- Expenses: Pengeluaran, Expenses, or Total Pengeluaran
+- Expenses: Pengeluaran, Expenses, or Total Pengeluaran (used only if separate category columns are not present).
 
 Optional:
+- Separate expense columns: `Jajan`, `Kopi`, `Sewa DW`, or custom category columns. Each is imported as its own expense line; a single old expense total is stored as `Biaya lama (belum dirinci)`.
 - Petugas / Staff: exact names separated by comma, semicolon, or pipe.
 - Catatan / Note.
 
@@ -72,3 +73,10 @@ If historical records have no staff roster, the 50% staff pool can still be calc
 - Admin can read import history and manage staff.
 - Create staff accounts only through the Supabase Auth dashboard. Do not enable public self-registration for this internal tool.
 - Before production, test roles using one admin and one staff account.
+
+
+## Itemized expenses
+- Daily input supports multiple expense lines: Jajan, Kopi, Sewa DW, and custom categories.
+- Each line has an amount and optional description. Total expenses are calculated automatically.
+- Period reports show total for each expense category and each attendant's total share.
+- Previously stored expense totals remain visible as "Biaya lama (belum dirinci)" until recorded with a category breakdown.
