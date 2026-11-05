@@ -346,7 +346,11 @@ $('exportExcel').onclick=()=>{
  XLSX.utils.book_append_sheet(w,XLSX.utils.json_to_sheet(paymentDetails),'Riwayat Pembayaran');
  XLSX.writeFile(w,'Sunset-Parking-Backup.xlsx')
 };
-$('dashEnter').addEventListener('click',drawDash);$('reportEnter').addEventListener('click',drawReport);$('dashPreset').onchange=()=>{syncDashFilters();drawDash()};$('dashStart').onchange=drawDash;$('dashEnd').onchange=drawDash;$('dashMonth').onchange=drawDash;$('dashYear').onchange=drawDash;
+$('dashEnter').addEventListener('click',()=>{syncDashFilters();drawDash()});$('reportEnter').addEventListener('click',drawReport);$('dashPreset').onchange=()=>{syncDashFilters();drawDash()};
+ $('dashStart').onchange=()=>{$('dashPreset').value='custom';syncDashFilters();drawDash()};
+ $('dashEnd').onchange=()=>{$('dashPreset').value='custom';syncDashFilters();drawDash()};
+ $('dashMonth').onchange=()=>{if($('dashMonth').value)$('dashPreset').value='month';syncDashFilters();drawDash()};
+ $('dashYear').onchange=()=>{if($('dashYear').value)$('dashPreset').value='year';syncDashFilters();drawDash()};
 $('loginForm').onsubmit=async e=>{e.preventDefault();$('loginButton').disabled=true;setText('loginMessage','Sedang login...');let {error}=await db.auth.signInWithPassword({email:$('loginEmail').value.trim(),password:$('loginPassword').value});$('loginButton').disabled=false;if(error){setText('loginMessage','Login gagal: '+error.message);return}try{await sessionStart()}catch(x){showLogin('Login berhasil, tetapi aplikasi belum selesai dimuat: '+x.message)}};
 $('logoutButton').onclick=async()=>{await db.auth.signOut();user=null;profile=null;showLogin('Kamu sudah logout.')};
 $('date').value=today();$('fromDate').value=today().slice(0,7)+'-01';$('toDate').value=today();$('reportMonth').value=today().slice(0,7);$('reportYear').value=today().slice(0,4);$('reportPreset').value='all';syncReportFilters();$('dashStart').value=today().slice(0,7)+'-01';$('dashEnd').value=today();$('dashMonth').value=today().slice(0,7);$('dashYear').value=today().slice(0,4);$('dashPreset').value='all';syncDashFilters();addExpenseRow();preview();
