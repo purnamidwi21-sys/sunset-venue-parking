@@ -2,7 +2,7 @@
 const URL='https://dsvdtqypumwjevgtoghr.supabase.co';
 const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRzdmR0cXlwdW13amV2Z3RvZ2hyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM4NzczNDUsImV4cCI6MjEwOTQ1MzM0NX0.VoCbLhxttbPPKtNqKaQPC-XQaHg9q48V5vyL0eDpZko';
 const db=window.supabase.createClient(URL,KEY), STAFF=['Pak Gangga','Pak Manik','Pak Bayu','Pak Dek Putra','Pak Riki'];
-let user=null,profile=null,staffRows=[],records=[],report=[];
+let user=null,profile=null,staffRows=[],records=[],report=[],payouts=[];
 const $=id=>document.getElementById(id), money=n=>new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(n)||0);
 const today=()=>{let d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')};
 const admin=()=>profile?.role==='admin', esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -25,9 +25,11 @@ async function loadData(){
   db.from('staff').select('id,full_name').eq('active',true),
   db.from('daily_records').select('*').order('record_date'),
   db.from('staff_duty').select('*'),
-  db.from('expense_items').select('*').order('created_at')
+  db.from('expense_items').select('*').order('created_at'),
+  db.from('payout_payments').select('*').order('paid_at')
  ]);
- for(const x of [s,d,j,e])if(x.error)throw x.error;
+ for(const x of [s,d,j,e,p])if(x.error)throw x.error;
+ payouts=p.data||[];
  staffRows=s.data||[];
  const names=Object.fromEntries(staffRows.map(x=>[x.id,x.full_name])),duty={},costs={};
  (j.data||[]).forEach(x=>{(duty[x.daily_record_id]??=[]).push(names[x.staff_id])});
@@ -66,6 +68,57 @@ function expenseCategoryTotals(rows){
  });
 }
 function expenseItemsText(r){return (r.expenseItems||[]).map(x=>x.category+': '+money(x.amount)).join(', ')||'—'}
+function settlementLines(rows){
+ const lines=[];
+ rows.forEach(r=>{
+  const c=calc(r);
+  const entitlements=[
+   {type:'sunset',name:'Sunset Venue',amount:c.sunset},
+   {type:'adat',name:'Desa Adat',amount:c.adat},
+   ...(r.staff||[]).map(name=>({type:'staff',name,amount:c.each}))
+  ];
+  entitlements.forEach(e=>{
+   if(e.amount<=0)return;
+   const paid=payouts.filter(p=>p.daily_record_id===r.id&&p.recipient_type===e.type&&p.recipient_name===e.name).reduce((s,p)=>s+Number(p.amount||0),0);
+   lines.push({recordId:r.id,date:r.date,type:e.type,name:e.name,due:e.amount,paid,balance:e.amount-paid});
+  });
+ });
+ return lines;
+}
+function settlementRows(rows){
+ const map={};
+ settlementLines(rows).forEach(line=>{
+  const key=line.type+'|'+line.name;
+  if(!map[key])map[key]={type:line.type,name:line.name,due:0,paid:0,balance:0,items:[]};
+  map[key].due+=line.due;map[key].paid+=line.paid;map[key].balance+=line.balance;
+  if(line.balance>0.009)map[key].items.push(line);
+ });
+ const order={'sunset':0,'adat':1,'staff':2};
+ return Object.values(map).sort((a,b)=>(order[a.type]-order[b.type])||(STAFF.indexOf(a.name)-STAFF.indexOf(b.name)));
+}
+function totalBalance(rows){return settlementLines(rows).reduce((s,x)=>s+Math.max(0,x.balance),0)}
+async function payRecipient(type,name){
+ if(!admin()){alert('Hanya Admin yang dapat mencatat pembayaran.');return}
+ const pending=settlementLines(report).filter(x=>x.type===type&&x.name===name&&x.balance>0.009);
+ if(!pending.length){alert('Tidak ada saldo yang perlu dibayarkan untuk penerima ini.');return}
+ const amount=pending.reduce((s,x)=>s+x.balance,0),method=$('paymentMethod').value;
+ if(!confirm('Konfirmasi pembayaran '+name+' sebesar '+money(amount)+' untuk periode laporan ini? Catat hanya setelah uang benar-benar dibayarkan.'))return;
+ const rowsToInsert=pending.map(x=>({daily_record_id:x.recordId,recipient_type:x.type,recipient_name:x.name,amount:Number(x.balance.toFixed(2)),payment_method:method,paid_by:user.id}));
+ const {error}=await db.from('payout_payments').insert(rowsToInsert);
+ if(error){alert('Pembayaran gagal dicatat: '+error.message);return}
+ await loadData();draw();
+}
+async function payAllBalances(){
+ if(!admin()){alert('Hanya Admin yang dapat mencatat pembayaran.');return}
+ const pending=settlementLines(report).filter(x=>x.balance>0.009);
+ if(!pending.length){alert('Semua saldo pada periode ini sudah lunas.');return}
+ const amount=pending.reduce((s,x)=>s+x.balance,0),method=$('paymentMethod').value;
+ if(!confirm('Catat pembayaran SELURUH sisa saldo untuk '+pending.length+' bagian penerima, total '+money(amount)+'? Pastikan seluruh uang sudah benar-benar dibayarkan.'))return;
+ const rowsToInsert=pending.map(x=>({daily_record_id:x.recordId,recipient_type:x.type,recipient_name:x.name,amount:Number(x.balance.toFixed(2)),payment_method:method,paid_by:user.id}));
+ const {error}=await db.from('payout_payments').insert(rowsToInsert);
+ if(error){alert('Pembayaran gagal dicatat: '+error.message);return}
+ await loadData();draw();
+}
 function staffEarnings(rows){
  const out={};
  rows.forEach(r=>{
@@ -82,6 +135,8 @@ function drawDash(){
  let p=$('dashPeriod').value,dt=today(),a=records.filter(r=>p==='all'||(p==='today'?r.date===dt:r.date.slice(0,7)===dt.slice(0,7))),t=total(a);
  $('dRevenue').textContent=money(t.rev);$('dExpenses').textContent=money(t.exp);$('dNet').textContent=money(t.net);$('dDays').textContent=a.length;
  $('dSunset').textContent=money(t.sun);$('dAdat').textContent=money(t.adat);$('dStaff').textContent=money(t.pool);
+ const lines=settlementLines(a),paid=lines.reduce((s,x)=>s+x.paid,0),outstanding=totalBalance(a);
+ $('dPaid').textContent=money(paid);$('dOutstanding').textContent=money(outstanding);
  const categoryTotals=expenseCategoryTotals(a);
  $('dashExpenseCategories').innerHTML=categoryTotals.length?categoryTotals.map(x=>'<div class="share"><span>'+esc(x.category)+'</span><b>'+money(x.amount)+'</b></div>').join(''):'<div class="empty">Belum ada biaya pada periode ini.</div>';
  const perStaff=staffEarnings(a);
@@ -99,10 +154,27 @@ function drawReport(){
  $('reportExpenseRows').innerHTML=perCategory.length?perCategory.map(x=>'<tr><td>'+esc(x.category)+'</td><td>'+money(x.amount)+'</td></tr>').join(''):'<tr><td colspan="2" class="empty">Tidak ada pengeluaran pada periode ini.</td></tr>';
  let perStaff=staffEarnings(report);
  $('reportStaffRows').innerHTML=perStaff.length?perStaff.map(x=>'<tr><td>'+esc(x.name)+'</td><td>'+x.days+'</td><td>'+money(x.amount)+'</td></tr>').join(''):'<tr><td colspan="3" class="empty">Belum ada pembagian petugas pada periode ini.</td></tr>';
+ const settlements=settlementRows(report);
+ const totalDue=settlements.reduce((s,x)=>s+x.due,0),totalPaid=settlements.reduce((s,x)=>s+x.paid,0),balance=totalBalance(report);
+ $('reportSettlementRows').innerHTML=settlements.length?settlements.map(x=>{
+  const status=x.balance<=0.009?'Lunas':(x.paid>0?'Belum lunas':'Belum dibayar');
+  const action=admin()&&x.balance>0.009?'<button class="secondary payout-one" onclick="window.payParkingRecipient(\''+x.type+'\',\''+esc(x.name)+'\')">Bayar saldo</button>':'—';
+  return '<tr><td>'+esc(x.name)+'</td><td>'+money(x.due)+'</td><td>'+money(x.paid)+'</td><td>'+money(Math.max(0,x.balance))+'</td><td>'+status+'</td><td>'+action+'</td></tr>';
+ }).join(''):'<tr><td colspan="6" class="empty">Belum ada pembagian pada periode ini.</td></tr>';
+ $('settlementSummary').innerHTML=[['Total hak bagi hasil',totalDue],['Sudah dibayar',totalPaid],['Saldo tersisa',balance]].map(x=>'<div class="card"><div class="label">'+x[0]+'</div><div class="value">'+money(x[1])+'</div></div>').join('');
+ $('payAllBtn').disabled=balance<=0.009;
+ $('payAllBtn').textContent=balance<=0.009?'Semua saldo sudah lunas':'Catat pembayaran semua saldo';
+ $('payAllBtn').classList.toggle('hidden',!admin());
+ $('paymentMethod').disabled=!admin();
+ const reportIds=new Set(report.map(r=>r.id)),recordDates=Object.fromEntries(report.map(r=>[r.id,r.date]));
+ const periodPayments=payouts.filter(p=>reportIds.has(p.daily_record_id)).sort((a,b)=>String(b.paid_at).localeCompare(String(a.paid_at)));
+ $('reportPaymentRows').innerHTML=periodPayments.length?periodPayments.map(p=>'<tr><td>'+esc(recordDates[p.daily_record_id]||'')+'</td><td>'+esc(p.recipient_name)+'</td><td>'+money(p.amount)+'</td><td>'+esc(p.payment_method||'')+'</td><td>'+new Date(p.paid_at).toLocaleString('id-ID')+'</td></tr>').join(''):'<tr><td colspan="5" class="empty">Belum ada pembayaran tercatat.</td></tr>';
 }
 function draw(){drawDash();drawHistory();if($('reports').classList.contains('active'))drawReport()}
 function page(p){document.querySelectorAll('.section').forEach(x=>x.classList.toggle('active',x.id===p));document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('active',x.dataset.page===p));$('pageTitle').textContent=({dashboard:'Dashboard',entry:'Input Harian',reports:'Laporan',history:'Data Historis'})[p];if(p==='reports')drawReport()}
 document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>page(b.dataset.page));
+window.payParkingRecipient=payRecipient;
+$('payAllBtn').onclick=payAllBalances;
 function addExpenseRow(category='Jajan',amount='',description='',custom=''){
  const row=document.createElement('div');row.className='expense-row';
  row.innerHTML='<div><label>Kategori</label><select class="expense-kind"><option>Jajan</option><option>Kopi</option><option>Sewa DW</option><option value="__custom">Lainnya</option></select></div><div class="expense-custom hidden"><label>Nama kategori</label><input class="expense-custom-name" type="text" placeholder="Contoh: BBM"></div><div><label>Nominal (Rp)</label><input class="expense-value" type="number" min="0" step="1" placeholder="0"></div><div><label>Keterangan (opsional)</label><input class="expense-note" type="text" placeholder="Catatan"></div><button type="button" class="secondary remove-expense">Hapus</button>';
@@ -152,6 +224,11 @@ function pdf(){
  doc.autoTable({startY:44,head:[['Tanggal','Pendapatan','Total biaya','Net','Sunset 25%','Desa Adat 25%','Petugas 50%','Petugas']],body:report.map(r=>{let c=calc(r);return[r.date,money(r.revenue),money(r.expenses),money(c.net),money(c.sunset),money(c.adat),money(c.pool),r.staff.join(', ')]}),styles:{fontSize:8}});
  let costDetails=[];report.forEach(r=>(r.expenseItems||[]).forEach(x=>costDetails.push([r.date,x.category,money(x.amount),x.description||''])));
  if(costDetails.length){doc.addPage();doc.text('Rincian biaya per tanggal',14,16);doc.autoTable({startY:23,head:[['Tanggal','Kategori','Nominal','Keterangan']],body:costDetails,styles:{fontSize:8}});}
+ const settlements=settlementRows(report);
+ if(settlements.length){
+  doc.addPage();doc.text('Status pembayaran bagi hasil',14,16);
+  doc.autoTable({startY:23,head:[['Penerima','Hak bagi hasil','Sudah dibayar','Saldo tersisa','Status']],body:settlements.map(x=>[x.name,money(x.due),money(x.paid),money(Math.max(0,x.balance)),x.balance<=0.009?'Lunas':(x.paid>0?'Belum lunas':'Belum dibayar')]),styles:{fontSize:8}});
+ }
  const staffTotals=staffEarnings(report);
  if(staffTotals.length){
   doc.addPage();
@@ -186,6 +263,8 @@ $('exportExcel').onclick=()=>{
  let details=[];records.forEach(r=>(r.expenseItems||[]).forEach(x=>details.push({Tanggal:r.date,Kategori:x.category,Nominal:x.amount,Keterangan:x.description})));
  XLSX.utils.book_append_sheet(w,XLSX.utils.json_to_sheet(summary),'Ringkasan Harian');
  XLSX.utils.book_append_sheet(w,XLSX.utils.json_to_sheet(details),'Rincian Biaya');
+ const paymentDetails=payouts.map(p=>({Tanggal:records.find(r=>r.id===p.daily_record_id)?.date||'',Penerima:p.recipient_name,Jenis:p.recipient_type,Nominal:p.amount,Metode:p.payment_method,Tanggal_Bayar:p.paid_at}));
+ XLSX.utils.book_append_sheet(w,XLSX.utils.json_to_sheet(paymentDetails),'Riwayat Pembayaran');
  XLSX.writeFile(w,'Sunset-Parking-Backup.xlsx')
 };
 $('dashPeriod').onchange=drawDash;$('refreshDash').onclick=async()=>{try{await loadData();draw()}catch(e){alert(e.message)}};
