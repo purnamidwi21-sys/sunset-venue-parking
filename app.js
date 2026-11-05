@@ -1,7 +1,7 @@
 (() => {
 const URL='https://dsvdtqypumwjevgtoghr.supabase.co';
 const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRzdmR0cXlwdW13amV2Z3RvZ2hyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM4NzczNDUsImV4cCI6MjEwOTQ1MzM0NX0.VoCbLhxttbPPKtNqKaQPC-XQaHg9q48V5vyL0eDpZko';
-const db=window.supabase.createClient(URL,KEY), STAFF=['Pak Manik','Pak Bayu','Pak Gangga','Pak Riky','Dek Putra'];
+const db=window.supabase.createClient(URL,KEY), STAFF=['Pak Manik','Pak Bayu','Pak Gangga','Pak Riky','Dek Putra'], IMPORT_STAFF=['Pak Manik','Pak Bayu','Pak Ganes','Pak Gangga','Pak Riky','Pak Dilan','Dek Putra'];
 let user=null,profile=null,staffRows=[],records=[],report=[],dashRows=[],payouts=[],paymentBusy=false,realtimeChannel=null,refreshTimer=null;
 const $=id=>document.getElementById(id), setText=(id,value)=>{const el=$(id);if(el)el.textContent=String(value??'')}, money=n=>new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(n)||0);
 const parseAmount=value=>{
@@ -281,9 +281,9 @@ $('importExcel').onclick=async()=>{
      if(amount>0)rec.expenseItems.push({category:description||'Biaya',amount,description:''});
      else if(description)rec.note=[rec.note,'Biaya tanpa nominal: '+description].filter(Boolean).join(' | ');
     }else if(category==='petugas parkir'){
-     const names=description.split(/[,;|]/).map(x=>x.trim()).filter(x=>STAFF.includes(x));
+     const names=description.split(/[,;|]/).map(x=>x.trim()).filter(x=>IMPORT_STAFF.includes(x));
      rec.staff=[...new Set([...rec.staff,...names])];
-     const unknown=description.split(/[,;|]/).map(x=>x.trim()).filter(x=>x&&!STAFF.includes(x));
+     const unknown=description.split(/[,;|]/).map(x=>x.trim()).filter(x=>x&&!IMPORT_STAFF.includes(x));
      if(unknown.length)rec.note=[rec.note,'Nama petugas tidak dikenali: '+unknown.join(', ')].filter(Boolean).join(' | ');
     }else if(category==='setoran'){
      if(incoming>0)rec.note=[rec.note,'Setoran masuk '+(description?description+' ':'')+money(incoming)].filter(Boolean).join(' | ');
@@ -298,7 +298,7 @@ $('importExcel').onclick=async()=>{
    const legacyCell=o.pengeluaran??o.expenses??o.totalpengeluaran??0;
    const legacyExp=parseAmount(legacyCell);
    if(!date||!Number.isFinite(rev)||!Number.isFinite(legacyExp)||rev<0||legacyExp<0){skipped++;continue}
-   const names=String(o.petugas??o.staff??'').split(/[,;|]/).map(x=>x.trim()).filter(x=>STAFF.includes(x));
+   const names=String(o.petugas??o.staff??'').split(/[,;|]/).map(x=>x.trim()).filter(x=>IMPORT_STAFF.includes(x));
    const note=String(o.catatan??o.note??'').trim();
    const isLongExpenseFormat=Object.prototype.hasOwnProperty.call(o,'itempengeluaran')||
     Object.prototype.hasOwnProperty.call(o,'itembiaya')||
