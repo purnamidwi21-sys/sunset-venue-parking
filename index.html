@@ -179,6 +179,18 @@ button{font-size:16px;min-height:46px}
  #dailyForm .stafftag{min-height:48px;padding:10px}
  #dailyForm .cost-total{padding:12px}
 }
+
+/* Reports: same period controls as dashboard and aligned staff selector */
+.report-period-toolbar{grid-template-columns:minmax(150px,1fr) minmax(150px,1fr) minmax(170px,.9fr) minmax(150px,.85fr) auto auto;gap:12px;align-items:end}
+.report-period-toolbar>.field{min-width:0;margin:0}
+.report-period-toolbar>.report-custom{grid-column:auto}
+.report-period-toolbar>.dash-month,.report-period-toolbar>.dash-year{grid-column:auto}
+.report-period-toolbar>button{white-space:nowrap;align-self:end}
+.report-staff-toolbar{display:flex;align-items:end;gap:12px}
+.report-staff-field{width:min(100%,360px);min-width:240px;margin:0}
+#reportStaffFilter{width:100%;padding:12px 46px 12px 14px;appearance:none;-webkit-appearance:none;background-color:#fff;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2353657d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 15px center;background-size:16px}
+@media(max-width:1100px){.report-period-toolbar{grid-template-columns:repeat(2,minmax(0,1fr))}.report-period-toolbar>button{width:100%}}
+@media(max-width:600px){.report-period-toolbar{grid-template-columns:1fr 1fr}.report-period-toolbar>.report-custom{grid-column:auto}.report-period-toolbar>.field:nth-child(3),.report-period-toolbar>.dash-month,.report-period-toolbar>.dash-year{grid-column:1/-1}.report-period-toolbar>button{grid-column:1/-1}.report-staff-field{width:100%;min-width:0}}
 </style>
 </head>
 <body>
@@ -234,14 +246,16 @@ button{font-size:16px;min-height:46px}
 </section>
 <section id="reports" class="section">
 <div class="panel">
-<h2>Laporan berdasarkan periode</h2>
-<div class="toolbar">
-<div class="field"><label>Dari tanggal</label><input type="date" id="fromDate"></div>
-<div class="field"><label>Sampai tanggal</label><input type="date" id="toDate"></div>
+<div class="toolbar dashboard-period-toolbar report-period-toolbar">
+<div class="field dash-custom report-custom"><label>Tanggal Mulai</label><input type="date" id="fromDate"></div>
+<div class="field dash-custom report-custom"><label>Tanggal Akhir</label><input type="date" id="toDate"></div>
+<div class="field"><label>Rentang Tanggal</label><select id="reportPreset"><option value="custom">Rentang Tanggal</option><option value="month">Bulan</option><option value="year">Tahun</option><option value="all">Semua Data</option></select></div>
+<div class="field dash-month hidden"><label>Bulan</label><input type="month" id="reportMonth"></div>
+<div class="field dash-year hidden"><label>Tahun</label><input type="number" id="reportYear" min="2000" max="2100" step="1"></div>
 <button class="secondary" id="pdfReport">Download PDF</button><button class="secondary" id="waReport">Kirim PDF ke WhatsApp</button>
 </div>
 <div class="panel" style="padding:0;border:0"><div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>Revenue</th><th>Pengeluaran</th><th>Net</th><th>Sunset 25%</th><th>Adat 25%</th><th>Petugas 50%</th><th>Petugas bertugas</th></tr></thead><tbody id="reportRows"></tbody></table></div></div>
-<div class="toolbar" style="margin-top:15px"><div class="field"><label>Filter petugas</label><select id="reportStaffFilter"><option value="">Semua petugas</option><option>Pak Gangga</option><option>Pak Manik</option><option>Pak Bayu</option><option>Pak Dek Putra</option><option>Pak Riki</option></select></div><span class="muted">Filter tanggal menggunakan kolom Dari tanggal dan Sampai tanggal di atas.</span></div>
+<div class="toolbar report-staff-toolbar" style="margin-top:15px"><div class="field report-staff-field"><label>Petugas Parkir</label><select id="reportStaffFilter"><option value="">Semua petugas</option><option>Pak Gangga</option><option>Pak Manik</option><option>Pak Bayu</option><option>Pak Dek Putra</option><option>Pak Riki</option></select></div></div>
 <div class="panel" style="margin-top:15px"><h2>Rincian pendapatan petugas parkir</h2><div class="tablewrap"><table style="min-width:520px"><thead><tr><th>Tanggal</th><th>Petugas</th><th>Pendapatan petugas</th></tr></thead><tbody id="reportDailyStaffRows"></tbody></table></div></div>
 </div>
 </section>
