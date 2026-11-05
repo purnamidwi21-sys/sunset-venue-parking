@@ -229,11 +229,11 @@ $('importExcel').onclick=async()=>{
  let expenseItems=[];const knownExpenseKeys={jajan:'Jajan',kopi:'Kopi',sewadw:'Sewa DW'};
  const manualSlots={};const manualSlotKeys=new Set();
  Object.keys(o).forEach(key=>{
-  let m=key.match(/^(itempengeluaran|itembiaya)(\\d+)$/);
+  let m=key.match(/^(itempengeluaran|itembiaya)(\d+)$/);
   if(m){const n=Number(m[2]);manualSlots[n]=manualSlots[n]||{};manualSlots[n].category=String(o[key]??'').trim();manualSlotKeys.add(key);return}
-  m=key.match(/^(nominalpengeluaran|nominalbiaya)(\\d+)$/);
+  m=key.match(/^(nominalpengeluaran|nominalbiaya)(\d+)$/);
   if(m){const n=Number(m[2]);manualSlots[n]=manualSlots[n]||{};manualSlots[n].amount=Number(String(o[key]??'').replace(/[^0-9.-]/g,''))||0;manualSlotKeys.add(key);return}
-  m=key.match(/^(keteranganpengeluaran|keteranganbiaya)(\\d+)$/);
+  m=key.match(/^(keteranganpengeluaran|keteranganbiaya)(\d+)$/);
   if(m){const n=Number(m[2]);manualSlots[n]=manualSlots[n]||{};manualSlots[n].description=String(o[key]??'').trim();manualSlotKeys.add(key)}
  });
  Object.keys(manualSlots).map(Number).sort((a,b)=>a-b).forEach(n=>{
@@ -241,7 +241,7 @@ $('importExcel').onclick=async()=>{
   if(item.category&&item.amount>0)expenseItems.push({category:item.category,amount:item.amount,description:item.description||''});
  });
  const ignoredKeys=new Set(['tanggal','date','tgl','revenue','totalrevenue','pendapatan','pengeluaran','expenses','totalpengeluaran','petugas','staff','catatan','note']);
- Object.keys(o).forEach(key=>{if(ignoredKeys.has(key)||manualSlotKeys.has(key)||/^(itempengeluaran|itembiaya|nominalpengeluaran|nominalbiaya|keteranganpengeluaran|keteranganbiaya)\\d+$/.test(key))return;const amount=Number(String(o[key]??'').replace(/[^0-9.-]/g,''));if(!Number.isFinite(amount)||amount<=0)return;const category=knownExpenseKeys[key]||key;expenseItems.push({category,amount,description:'Diimpor dari kolom '+category})});
+ Object.keys(o).forEach(key=>{if(ignoredKeys.has(key)||manualSlotKeys.has(key)||/^(itempengeluaran|itembiaya|nominalpengeluaran|nominalbiaya|keteranganpengeluaran|keteranganbiaya)\d+$/.test(key))return;const amount=Number(String(o[key]??'').replace(/[^0-9.-]/g,''));if(!Number.isFinite(amount)||amount<=0)return;const category=knownExpenseKeys[key]||key;expenseItems.push({category,amount,description:'Diimpor dari kolom '+category})});
  if(!expenseItems.length&&legacyExp>0)expenseItems=[{category:'Biaya lama (belum dirinci)',amount:legacyExp,description:'Diimpor dari kolom pengeluaran total'}];
  let exp=expenseItems.reduce((s,x)=>s+x.amount,0);let names=String(o.petugas??o.staff??'').split(/[,;|]/).map(x=>x.trim()).filter(x=>STAFF.includes(x));let exists=records.some(x=>x.date===date);try{await saveRecord({date,revenue:rev,expenses:exp,expenseItems,staff:names,note:String(o.catatan??o.note??''),source:'excel_import'});if(exists)updated++;else added++}catch(e){skipped++}}
  await db.from('import_history').insert({file_name:f.name,rows_read:rows.length,rows_added:added,rows_updated:updated,rows_skipped:skipped,imported_by:user.id});
