@@ -83,7 +83,7 @@ If historical records have no staff roster, the 50% staff pool can still be calc
 
 
 ## Profit-share payments and balances
-- Each daily share creates an amount payable to Sunset Venue, Desa Adat, and the attendants on duty.
+- Each daily share creates an amount payable to Sunset Venue, Banjar Adat, and the attendants on duty.
 - The Reports page shows amount due, amount paid, and outstanding balance for the selected date range.
 - Admin can record payment for one recipient or record all outstanding balances as paid in one action.
 - Each payment is stored with the underlying daily record, payment method, timestamp, and admin account.
