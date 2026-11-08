@@ -187,24 +187,11 @@ function staffEarnings(rows){
 }
 function dashDateRange(){const p=$('dashPreset').value,dt=today();if(p==='all')return{from:'',to:''};if(p==='month'){const m=$('dashMonth').value||dt.slice(0,7),last=new Date(+m.slice(0,4),+m.slice(5,7),0).getDate();return{from:m+'-01',to:m+'-'+String(last).padStart(2,'0')}}if(p==='year'){const y=$('dashYear').value||dt.slice(0,4);return{from:y+'-01-01',to:y+'-12-31'}}return{from:$('dashStart').value,to:$('dashEnd').value}}
 function syncDashFilters(){const p=$('dashPreset').value;const custom=p==='custom';document.querySelectorAll('.dash-custom').forEach(x=>{x.classList.toggle('hidden',p==='all');const input=x.querySelector('input');if(input)input.disabled=!custom});$('dashMonth').parentElement.classList.toggle('hidden',p!=='month');$('dashYear').parentElement.classList.toggle('hidden',p!=='year');if(p==='month'||p==='year'){const r=dashDateRange();$('dashStart').value=r.from;$('dashEnd').value=r.to}}
-function drawDash(){const range=dashDateRange();let a=records.filter(r=>(!range.from||r.date>=range.from)&&(!range.to||r.date<=range.to)),t=total(a);dashRows=a;
- setText('dRevenue',money(t.rev));setText('dExpenses',money(t.exp));setText('dNet',money(t.net));
- setText('dSunset',money(t.sun));setText('dAdat',money(t.adat));setText('dStaff',money(t.pool));
- const settlements=settlementRows(a);
- const categoryTotals=expenseCategoryTotals(a);
- $('dashExpenseCategories').innerHTML=categoryTotals.length?categoryTotals.map(x=>'<div class="share"><span>'+esc(x.category)+'</span><b>'+money(x.amount)+'</b></div>').join(''):'<div class="empty">Belum ada biaya pada periode ini.</div>';
- const perStaff=staffEarnings(a);
- $('dashStaffEarnings').innerHTML=perStaff.length?perStaff.map(x=>'<div class="share"><span>'+esc(x.name)+'<small class="muted" style="display:block">'+x.days+' hari bertugas</small></span><b>'+money(x.amount)+'</b></div>').join(''):'<div class="empty">Belum ada petugas tercatat pada periode ini.</div>';
- $('recent').innerHTML=a.length?[...a].sort((x,y)=>y.date.localeCompare(x.date)).slice(0,5).map(r=>'<div class="share"><span>'+esc(r.date)+'<small class="muted" style="display:block">'+esc(r.staff.join(', '))+'</small></span><b>'+money(calc(r).net)+'</b></div>').join(''):'<div class="empty">Belum ada data.</div>';
-}
-function drawHistory(){
- $('historyRows').innerHTML=records.length?[...records].sort((a,b)=>b.date.localeCompare(a.date)).map(r=>'<tr><td>'+esc(r.date)+'</td><td>'+money(r.revenue)+'</td><td>'+money(r.expenses)+'</td><td>'+esc(expenseItemsText(r))+'</td><td>'+money(calc(r).net)+'</td><td>'+esc(r.staff.join(', '))+'</td><td>'+esc(r.note)+'</td><td>'+(admin()?'<button class="danger" onclick="window.delParkingRecord(\''+r.id+'\')">Hapus</button>':'—')+'</td></tr>').join(''):'<tr><td colspan="8" class="empty">Belum ada data.</td></tr>';
-}
 function reportDateRange(){const p=$('reportPreset').value,dt=today();if(p==='all')return{from:'',to:''};if(p==='month'){const m=$('reportMonth').value||dt.slice(0,7),last=new Date(+m.slice(0,4),+m.slice(5,7),0).getDate();return{from:m+'-01',to:m+'-'+String(last).padStart(2,'0')}}if(p==='year'){const y=$('reportYear').value||dt.slice(0,4);return{from:y+'-01-01',to:y+'-12-31'}}return{from:$('fromDate').value,to:$('toDate').value}}
 function syncReportFilters(){const p=$('reportPreset').value;document.querySelectorAll('.report-custom').forEach(x=>{x.classList.toggle('hidden',p==='all');const input=x.querySelector('input');if(input)input.disabled=false});$('reportMonth').parentElement.classList.toggle('hidden',p!=='month');$('reportYear').parentElement.classList.toggle('hidden',p!=='year');if(p==='month'||p==='year'){const r=reportDateRange();$('fromDate').value=r.from;$('toDate').value=r.to}}
 function setupRealtime(){if(realtimeChannel)db.removeChannel(realtimeChannel);realtimeChannel=db.channel('parking-data-live').on('postgres_changes',{event:'*',schema:'public',table:'daily_records'},async()=>{await loadData();draw()}).on('postgres_changes',{event:'*',schema:'public',table:'staff_duty'},async()=>{await loadData();draw()}).on('postgres_changes',{event:'*',schema:'public',table:'expense_items'},async()=>{await loadData();draw()}).on('postgres_changes',{event:'*',schema:'public',table:'payout_payments'},async()=>{await loadData();draw()}).subscribe();if(refreshTimer)clearInterval(refreshTimer);refreshTimer=setInterval(async()=>{if(!user)return;try{await loadData();draw()}catch(e){console.warn('Auto refresh:',e.message)}},30000)}
 function draw(){drawDash();drawHistory();if($('reports').classList.contains('active'))drawReport()}
-function page(p){document.querySelectorAll('.section').forEach(x=>{const active=x.id===p;x.classList.toggle('active',active);x.style.display=active?'block':'none'});document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('active',x.dataset.page===p));setText('pageTitle',({dashboard:'Dashboard',entry:'Input Harian',reports:'Laporan',history:'Data Historis'})[p]||'Dashboard');if(p==='dashboard')drawDash();if(p==='reports')drawReport()}
+function page(p){document.querySelectorAll('.section').forEach(x=>{const active=x.id===p;x.classList.toggle('active',active);x.style.display=active?'block':'none'});document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('active',x.dataset.page===p));const info=PAGE_INFO[p]||PAGE_INFO.dashboard;setText('pageTitle',info[0]);setText('pageSub',info[1]);window.scrollTo?.(0,0);if(p==='dashboard')drawDash();if(p==='reports')drawReport()}
 document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>page(b.dataset.page));
 window.payParkingRecipient=payRecipient;
 function addExpenseRow(category='',amount='',description=''){
@@ -224,11 +211,6 @@ function collectExpenseItems(){
  return items;
 }
 function collectExpenseItemsSafe(){try{return collectExpenseItems()}catch(e){return []}}
-function preview(){
- const rev=Number($('revenue').value)||0,items=collectExpenseItemsSafe(),exp=items.reduce((s,x)=>s+x.amount,0),st=chosen(),net=rev-exp,pool=net*.5;
- setText('expenseTotal',money(exp));
- $('preview').innerHTML='<div class="preview-line"><span>Total biaya:</span> <b>'+money(exp)+'</b> <span class="preview-dot">·</span> <span>Net revenue:</span> <b>'+money(net)+'</b></div><div class="preview-line"><span>Sunset Venue 25%:</span> <b>'+money(net*.25)+'</b> <span class="preview-dot">·</span> <span>Banjar Adat 25%:</span> <b>'+money(net*.25)+'</b> <span class="preview-dot">·</span> <span>Petugas 50%:</span> <b>'+money(pool)+'</b> <span class="preview-count">('+st.length+' orang'+(st.length?' · '+money(pool/st.length)+' per orang':' · pilih petugas')+')</span></div>';
-}
 // Enter sebagai pintasan utama di seluruh aplikasi
 document.addEventListener('keydown',e=>{
  if(e.key!=='Enter'||e.isComposing||e.shiftKey)return;
@@ -274,6 +256,15 @@ function expenseCategorySummary(rows){
   return{name,count:g.count,amount:g.amount,share:total?g.amount/total:0};
  }).sort((a,b)=>b.amount-a.amount||a.name.localeCompare(b.name,'id'));
 }
+function periodKpis(rows,t){
+ const days=rows.length;
+ return[
+  {label:'Total Pendapatan',value:rp(t.rev),note:days?'Rata-rata '+rp(t.rev/days)+' per hari':'Belum ada data'},
+  {label:'Total Pengeluaran',value:rp(t.exp),note:pct(t.rev?t.exp/t.rev:0)+' dari pendapatan'},
+  {label:'Pendapatan Bersih',value:rp(t.net),note:'Margin '+pct(t.rev?t.net/t.rev:0)},
+  {label:'Hari Tercatat',value:days+' hari',note:days?fmtDate(rows[0].date)+' – '+fmtDate(rows[days-1].date):'—'}
+ ];
+}
 function reportData(){
  const range=reportDateRange();
  const rows=records.filter(r=>(!range.from||r.date>=range.from)&&(!range.to||r.date<=range.to)).sort((a,b)=>a.date.localeCompare(b.date));
@@ -282,12 +273,7 @@ function reportData(){
  return{
   rows,t,days,from,to,
   period:from||to?fmtDate(from)+' – '+fmtDate(to):'Semua data',
-  kpis:[
-   {label:'Total Pendapatan',value:rp(t.rev),note:days?'Rata-rata '+rp(t.rev/days)+' per hari':'—'},
-   {label:'Total Pengeluaran',value:rp(t.exp),note:pct(t.rev?t.exp/t.rev:0)+' dari pendapatan'},
-   {label:'Pendapatan Bersih',value:rp(t.net),note:'Margin '+pct(t.rev?t.net/t.rev:0)},
-   {label:'Hari Tercatat',value:days+' hari',note:rows.length?fmtDate(rows[0].date)+' – '+fmtDate(rows[days-1].date):'—'}
-  ],
+  kpis:periodKpis(rows,t),
   shares:[['Sunset Venue','25%',t.sun],['Banjar Adat','25%',t.adat],['Petugas Parkir','50%',t.pool]],
   staff:staffEarnings(rows).map(x=>({...x,avg:x.days?x.amount/x.days:0})),
   categories:expenseCategorySummary(rows),
@@ -315,14 +301,14 @@ function htmlTable(key,data,empty){
  const head='<thead><tr>'+c.head.map((h,i)=>'<th'+cls(i)+'>'+esc(h)+'</th>').join('')+'</tr></thead>';
  const body='<tbody>'+(data.body.length?data.body.map(r=>'<tr>'+r.map((v,i)=>'<td'+cls(i)+'>'+esc(v)+'</td>').join('')+'</tr>').join(''):'<tr><td colspan="'+c.head.length+'" class="empty">'+esc(empty)+'</td></tr>')+'</tbody>';
  const foot=data.body.length?'<tfoot><tr>'+data.foot.map((v,i)=>'<td'+cls(i)+'>'+esc(v)+'</td>').join('')+'</tr></tfoot>':'';
- return'<table class="rpt-table rpt-'+key+'">'+head+body+foot+'</table>';
+ return'<table class="data-table t-'+key+'">'+head+body+foot+'</table>';
 }
 function drawReport(){
  const R=reportData(),T=reportTables(R);
  report=R.rows;
  setText('reportPeriodLabel','Periode: '+R.period);
  setText('reportRecordCount',R.days+' hari tercatat');
- $('rptKpis').innerHTML=R.kpis.map((k,i)=>'<div class="rpt-kpi'+(i===2?' is-net':'')+'"><span>'+esc(k.label)+'</span><strong>'+esc(k.value)+'</strong><small>'+esc(k.note)+'</small></div>').join('');
+ $('rptKpis').innerHTML=kpiHtml(R.kpis);
  $('rptShares').innerHTML=htmlTable('shares',T.shares,'Tidak ada data.');
  $('rptStaff').innerHTML=htmlTable('staff',T.staff,'Tidak ada petugas tercatat.');
  $('rptCategories').innerHTML=htmlTable('categories',T.categories,'Tidak ada pengeluaran.');
@@ -379,6 +365,74 @@ function pdf(){
  return doc;
 }
 function pdfName(){const R=reportData();return'Laporan-Parkir-Sunset-Venue'+(R.from?'_'+R.from+'_sd_'+R.to:'')+'.pdf'}
+// ===== Dashboard =====
+const SHARE_COLORS=['#172b45','#4f7fb3','#d67826'];
+function kpiHtml(kpis){return kpis.map((k,i)=>'<div class="kpi'+(i===2?' is-net':'')+'"><span>'+esc(k.label)+'</span><strong>'+esc(k.value)+'</strong><small>'+esc(k.note)+'</small></div>').join('')}
+function drawDash(){
+ const range=dashDateRange();
+ const a=records.filter(r=>(!range.from||r.date>=range.from)&&(!range.to||r.date<=range.to)).sort((x,y)=>x.date.localeCompare(y.date)),t=total(a);
+ dashRows=a;
+ $('dKpis').innerHTML=kpiHtml(periodKpis(a,t));
+ // Pembagian hasil
+ const shares=[['Sunset Venue',.25,t.sun],['Banjar Adat',.25,t.adat],['Petugas Parkir',.5,t.pool]];
+ $('dShares').innerHTML=a.length?'<div class="split-bar">'+shares.map((s,i)=>'<i style="width:'+(s[1]*100)+'%;background:'+SHARE_COLORS[i]+'"></i>').join('')+'</div><div class="legend-list">'+shares.map((s,i)=>'<div class="legend-row"><span class="dot" style="background:'+SHARE_COLORS[i]+'"></span><span>'+s[0]+'<em>'+(s[1]*100)+'%</em></span><b>'+rp(s[2])+'</b></div>').join('')+'</div><div class="legend-total"><span>Pendapatan bersih</span><span>'+rp(t.net)+'</span></div>':'<div class="empty">Belum ada data pada periode ini.</div>';
+ // Petugas
+ const st=staffEarnings(a);
+ $('dashStaffEarnings').innerHTML=st.length?'<div class="tablewrap"><table class="data-table"><thead><tr><th>Nama Petugas</th><th class="num">Hari</th><th class="num">Total</th></tr></thead><tbody>'+st.map(x=>'<tr><td>'+esc(x.name)+'</td><td class="num">'+x.days+'</td><td class="num">'+rp(x.amount)+'</td></tr>').join('')+'</tbody><tfoot><tr><td>Total</td><td></td><td class="num">'+rp(st.reduce((s,x)=>s+x.amount,0))+'</td></tr></tfoot></table></div>':'<div class="empty">Belum ada petugas tercatat pada periode ini.</div>';
+ // Biaya per kategori (6 terbesar + lainnya)
+ const cats=expenseCategorySummary(a),top=cats.slice(0,6),rest=cats.slice(6);
+ if(rest.length)top.push({name:'Lainnya ('+rest.length+' kategori)',amount:rest.reduce((s,x)=>s+x.amount,0),share:rest.reduce((s,x)=>s+x.share,0)});
+ const max=Math.max(1,...top.map(x=>x.amount));
+ setText('dCatHint',cats.length?'Total '+rp(t.exp)+' · '+cats.length+' kategori':'Pengeluaran terbesar periode ini');
+ $('dashExpenseCategories').innerHTML=top.length?'<div class="bar-list">'+top.map(x=>'<div class="bar-item"><div class="bar-top"><span>'+esc(x.name)+'</span><b>'+rp(x.amount)+'<em>'+pct(x.share)+'</em></b></div><div class="bar-track"><i style="width:'+Math.max(2,x.amount/max*100)+'%"></i></div></div>').join('')+'</div>':'<div class="empty">Belum ada biaya pada periode ini.</div>';
+ // Aktivitas terbaru
+ const last=[...a].reverse().slice(0,5);
+ const days=a.length,staffDays=a.reduce((x,r)=>x+r.staff.length,0);
+ $('dMini').innerHTML=days?'<div><span>Bersih rata-rata / hari</span><b>'+rp(t.net/days)+'</b></div><div><span>Petugas rata-rata / hari</span><b>'+(staffDays/days).toLocaleString('id-ID',{maximumFractionDigits:1})+' orang</b></div>':'';
+ $('recent').innerHTML=last.length?'<div class="tablewrap"><table class="data-table"><thead><tr><th>Tanggal</th><th class="num">Pendapatan</th><th class="num">Bersih</th><th class="num">Petugas</th></tr></thead><tbody>'+last.map(r=>'<tr><td>'+esc(fmtDay(r.date))+'</td><td class="num">'+rp(r.revenue)+'</td><td class="num">'+rp(calc(r).net)+'</td><td class="num">'+r.staff.length+' orang</td></tr>').join('')+'</tbody></table></div>':'<div class="empty">Belum ada data.</div>';
+}
+// ===== Data Historis =====
+let histLimit=30;
+function drawHistory(){
+ const sel=$('histMonth'),months={};records.forEach(r=>{const k=r.date.slice(0,7);months[k]=(months[k]||0)+1});
+ const keys=Object.keys(months).sort().reverse(),cur=sel.value,fmtMonth=k=>new Intl.DateTimeFormat('id-ID',{month:'long',year:'numeric'}).format(ymd(k+'-01'));
+ const opts='<option value="">Semua bulan</option>'+keys.map(k=>'<option value="'+k+'">'+fmtMonth(k)+' ('+months[k]+' hari)</option>').join('');
+ if(sel.dataset.sig!==opts){sel.innerHTML=opts;sel.dataset.sig=opts;sel.value=keys.includes(cur)?cur:''}
+ const m=sel.value,q=$('histSearch').value.trim().toLowerCase();
+ const all=[...records].sort((a,b)=>b.date.localeCompare(a.date));
+ const rows=all.filter(r=>(!m||r.date.startsWith(m))&&(!q||[r.staff.join(' '),expenseItemsText(r),r.note,r.date,fmtDay(r.date)].join(' ').toLowerCase().includes(q)));
+ const shown=rows.slice(0,histLimit);
+ setText('histCount',(m||q?rows.length+' dari '+all.length:all.length)+' hari tercatat'+(rows.length>shown.length?' · menampilkan '+shown.length:''));
+ const head='<thead><tr><th>Tanggal</th><th class="num">Pendapatan</th><th class="num">Biaya</th><th class="num">Bersih</th><th>Petugas</th><th>Rincian Biaya</th><th>Catatan</th>'+(admin()?'<th></th>':'')+'</tr></thead>';
+ const body=shown.length?shown.map(r=>'<tr><td>'+esc(fmtDay(r.date))+(r.source==='excel_import'?'<span class="sub">dari Excel</span>':'')+'</td><td class="num" data-label="Pendapatan">'+rp(r.revenue)+'</td><td class="num" data-label="Biaya">'+rp(r.expenses)+'</td><td class="num" data-label="Bersih"><b>'+rp(calc(r).net)+'</b></td><td class="wrap" data-label="Petugas ('+r.staff.length+' orang)"><span class="sub">'+esc(r.staff.join(', ')||'—')+'</span></td><td class="wrap" data-label="Rincian biaya"><span class="sub">'+esc((r.expenseItems||[]).map(x=>titleCase(String(x.category))+' '+rp(x.amount)).join(' · ')||'—')+'</span></td><td class="note'+(r.note?'':' none')+'" data-label="Catatan"><span class="sub">'+esc(r.note||'—')+'</span></td>'+(admin()?'<td class="act"><button class="danger" onclick="window.delParkingRecord(\''+r.id+'\')">Hapus</button></td>':'')+'</tr>').join(''):'<tr><td colspan="8" class="empty">'+(all.length?'Tidak ada data yang cocok.':'Belum ada data.')+'</td></tr>';
+ $('historyTable').innerHTML='<table class="data-table t-history">'+head+'<tbody>'+body+'</tbody></table>';
+ $('histMore').classList.toggle('hidden',rows.length<=shown.length);
+ const first=all[all.length-1],lastR=all[0],t=total(records),excel=records.filter(r=>r.source==='excel_import').length;
+ $('histStats').innerHTML=[
+  ['Hari tercatat',records.length+' hari'],
+  ['Rentang data',records.length?fmtDate(first.date)+' – '+fmtDate(lastR.date):'—'],
+  ['Total pendapatan',rp(t.rev)],
+  ['Total pendapatan bersih',rp(t.net)],
+  ['Sumber data',excel+' dari Excel · '+(records.length-excel)+' input manual']
+ ].map(x=>'<div><dt>'+x[0]+'</dt><dd>'+esc(x[1])+'</dd></div>').join('');
+}
+$('histMonth').onchange=()=>{histLimit=30;drawHistory()};
+$('histSearch').oninput=()=>{histLimit=30;drawHistory()};
+$('histMore').onclick=()=>{histLimit+=30;drawHistory()};
+// ===== Simulasi Input Harian =====
+function preview(){
+ const rev=Number($('revenue').value)||0,items=collectExpenseItemsSafe(),exp=items.reduce((s,x)=>s+x.amount,0),st=chosen(),net=rev-exp,pool=net*.5,d=$('date').value;
+ setText('expenseTotal',rp(exp));
+ const row=(l,v,cls='')=>'<div class="sum-row'+cls+'"><span>'+l+'</span><b>'+v+'</b></div>';
+ let notes='';
+ if(d&&records.some(x=>x.date===d))notes+='<div class="sum-note warn">Tanggal ini sudah punya data. Menyimpan akan menimpa data lama.</div>';
+ if(!st.length)notes+='<div class="sum-note info">Centang petugas yang bertugas untuk menghitung bagian per orang.</div>';
+ if(net<0)notes+='<div class="sum-note warn">Biaya lebih besar dari pendapatan, hasil bagi menjadi minus.</div>';
+ $('preview').innerHTML='<p class="summary-date">'+(d?esc(fmtDay(d)):'Pilih tanggal')+'</p>'+
+  '<div class="sum-table">'+row('Pendapatan',rp(rev))+row('Total biaya',rp(exp))+row('Pendapatan bersih',rp(net),' total')+'</div>'+
+  '<div class="sum-group">'+row('Sunset Venue 25%',rp(net*.25))+row('Banjar Adat 25%',rp(net*.25))+row('Petugas Parkir 50%',rp(pool))+row(st.length?st.length+' petugas · per orang':'Per petugas',st.length?rp(pool/st.length):'—')+'</div>'+notes;
+}
+const PAGE_INFO={dashboard:['Dashboard','Ringkasan pendapatan, biaya, dan pembagian hasil parkir'],entry:['Input Harian','Catat pendapatan, biaya, dan petugas yang bertugas'],reports:['Laporan','Laporan keuangan per periode, siap diunduh sebagai PDF'],history:['Data Historis','Semua data harian, import Excel, dan backup']};
 function reportDateEdited(){$('reportPreset').value='custom';syncReportFilters();drawReport()}$('fromDate').onchange=reportDateEdited;$('toDate').onchange=reportDateEdited;$('reportPreset').onchange=()=>{syncReportFilters();drawReport()};$('reportMonth').onchange=()=>{syncReportFilters();drawReport()};$('reportYear').onchange=()=>{syncReportFilters();drawReport()};$('pdfReport').onclick=()=>{let d=pdf();if(d)d.save(pdfName())};
 $('waReport').onclick=async()=>{let d=pdf();if(!d)return;const name=pdfName();let file=new File([d.output('blob')],name,{type:'application/pdf'});if(navigator.canShare?.({files:[file]})){try{await navigator.share({files:[file],title:'Laporan Sunset Venue Parking'});return}catch(e){if(e.name==='AbortError')return}}d.save(name);window.open('https://wa.me/?text='+encodeURIComponent('Laporan Sunset Venue Parking. PDF sudah diunduh, silakan lampirkan file PDF di WhatsApp.'),'_blank')};
 function dateParse(v){if(v instanceof Date)return [v.getFullYear(),String(v.getMonth()+1).padStart(2,'0'),String(v.getDate()).padStart(2,'0')].join('-');if(typeof v==='number'){let d=XLSX.SSF.parse_date_code(v);if(d)return[d.y,String(d.m).padStart(2,'0'),String(d.d).padStart(2,'0')].join('-')}let s=String(v||'').trim();if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;let p=s.split(/[\/.-]/);if(p.length===3)return p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0');return''}
