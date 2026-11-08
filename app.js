@@ -202,18 +202,6 @@ function drawHistory(){
 }
 function reportDateRange(){const p=$('reportPreset').value,dt=today();if(p==='all')return{from:'',to:''};if(p==='month'){const m=$('reportMonth').value||dt.slice(0,7),last=new Date(+m.slice(0,4),+m.slice(5,7),0).getDate();return{from:m+'-01',to:m+'-'+String(last).padStart(2,'0')}}if(p==='year'){const y=$('reportYear').value||dt.slice(0,4);return{from:y+'-01-01',to:y+'-12-31'}}return{from:$('fromDate').value,to:$('toDate').value}}
 function syncReportFilters(){const p=$('reportPreset').value;document.querySelectorAll('.report-custom').forEach(x=>{x.classList.toggle('hidden',p==='all');const input=x.querySelector('input');if(input)input.disabled=false});$('reportMonth').parentElement.classList.toggle('hidden',p!=='month');$('reportYear').parentElement.classList.toggle('hidden',p!=='year');if(p==='month'||p==='year'){const r=reportDateRange();$('fromDate').value=r.from;$('toDate').value=r.to}}
-function drawReport(){
- const range=reportDateRange(),from=range.from,to=range.to;
- report=records.filter(r=>(!from||r.date>=from)&&(!to||r.date<=to)).sort((a,b)=>a.date.localeCompare(b.date));
- const t=total(report);
- setText('reportPeriodLabel',report.length?(from||report[0].date)+' s.d. '+(to||report[report.length-1].date):'Tidak ada periode data');
- setText('reportRecordCount',report.length+' hari tercatat');
- setText('rRevenue',money(t.rev));setText('rExpenses',money(t.exp));setText('rNet',money(t.net));
- setText('rSunset',money(t.sun));setText('rAdat',money(t.adat));setText('rStaff',money(t.pool));
- $('reportRows').innerHTML=report.length?report.map(r=>{const c=calc(r);return'<tr><td>'+esc(r.date)+'</td><td class="num">'+money(r.revenue)+'</td><td class="num">'+money(r.expenses)+'</td><td class="num strong">'+money(c.net)+'</td><td class="num">'+money(c.sunset)+'</td><td class="num">'+money(c.adat)+'</td><td class="num">'+money(c.pool)+'</td><td>'+esc(r.staff.join(', '))+'</td></tr>'}).join(''):'<tr><td colspan="8" class="empty">Tidak ada data pada periode ini.</td></tr>';
- const summaries=staffEarnings(report);
- $('reportStaffSummaryRows').innerHTML=summaries.length?summaries.map(x=>'<tr><td>'+esc(x.name)+'</td><td class="num">'+x.days+'</td><td class="num strong">'+money(x.amount)+'</td></tr>').join(''):'<tr><td colspan="3" class="empty">Tidak ada data petugas pada periode ini.</td></tr>';
-}
 function setupRealtime(){if(realtimeChannel)db.removeChannel(realtimeChannel);realtimeChannel=db.channel('parking-data-live').on('postgres_changes',{event:'*',schema:'public',table:'daily_records'},async()=>{await loadData();draw()}).on('postgres_changes',{event:'*',schema:'public',table:'staff_duty'},async()=>{await loadData();draw()}).on('postgres_changes',{event:'*',schema:'public',table:'expense_items'},async()=>{await loadData();draw()}).on('postgres_changes',{event:'*',schema:'public',table:'payout_payments'},async()=>{await loadData();draw()}).subscribe();if(refreshTimer)clearInterval(refreshTimer);refreshTimer=setInterval(async()=>{if(!user)return;try{await loadData();draw()}catch(e){console.warn('Auto refresh:',e.message)}},30000)}
 function draw(){drawDash();drawHistory();if($('reports').classList.contains('active'))drawReport()}
 function page(p){document.querySelectorAll('.section').forEach(x=>{const active=x.id===p;x.classList.toggle('active',active);x.style.display=active?'block':'none'});document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('active',x.dataset.page===p));setText('pageTitle',({dashboard:'Dashboard',entry:'Input Harian',reports:'Laporan',history:'Data Historis'})[p]||'Dashboard');if(p==='dashboard')drawDash();if(p==='reports')drawReport()}
@@ -264,21 +252,135 @@ $('dailyForm').onsubmit=async e=>{
 };
 $('resetForm').onclick=()=>{$('dailyForm').reset();$('expenseRows').innerHTML='';addExpenseRow();$('date').value=today();preview()};
 window.delParkingRecord=async id=>{if(!admin()||!confirm('Hapus data ini?'))return;let {error}=await db.from('daily_records').delete().eq('id',id);if(error){alert(error.message);return}await loadData();draw()};
-function pdf(){if(!report.length){alert('Tidak ada data laporan.');return null}
- const {jsPDF}=window.jspdf,doc=new jsPDF({orientation:'landscape'}),t=total(report);
- doc.setFontSize(17);doc.text('SUNSET VENUE PARKING',14,16);doc.setFontSize(10);doc.text('Laporan '+report[0].date+' s/d '+report[report.length-1].date,14,23);
- let y=31;doc.setFontSize(13);doc.text('1. Pendapatan',14,y);
- doc.autoTable({startY:y+4,head:[['Tanggal','Pendapatan']],body:report.map(r=>[r.date,money(r.revenue)]),foot:[['TOTAL',money(t.rev)]],styles:{fontSize:9},theme:'grid'});
- y=doc.lastAutoTable.finalY+12;doc.setFontSize(13);doc.text('2. Pengeluaran',14,y);
- const costDetails=[];report.forEach(r=>(r.expenseItems||[]).forEach(x=>costDetails.push([r.date,x.category,money(x.amount),x.description||''])));
- doc.autoTable({startY:y+4,head:[['Tanggal','Item pengeluaran','Nominal','Keterangan']],body:costDetails,foot:[['','','TOTAL',money(t.exp)]],styles:{fontSize:8},theme:'grid'});
- y=doc.lastAutoTable.finalY+12;doc.setFontSize(13);doc.text('3. Pembagian hasil',14,y);
- doc.autoTable({startY:y+4,head:[['Tanggal','Net Revenue','Sunset Venue 25%','Banjar Adat 25%']],body:report.map(r=>{const c=calc(r);return[r.date,money(c.net),money(c.sunset),money(c.adat)]}),foot:[['TOTAL',money(t.net),money(t.sun),money(t.adat)]],styles:{fontSize:8},theme:'grid'});
- y=doc.lastAutoTable.finalY+12;doc.setFontSize(13);doc.text('4. Rincian Pendapatan Petugas Parkir',14,y);
- const staffRows=staffEarnings(report);
- doc.autoTable({startY:y+4,head:[['Nama Petugas','Hari Bertugas','Total Pendapatan']],body:staffRows.map(x=>[x.name,String(x.days),money(x.amount)]),foot:[['TOTAL','',money(staffRows.reduce((s,x)=>s+x.amount,0))]],styles:{fontSize:8},theme:'grid'});return doc}
-function reportDateEdited(){$('reportPreset').value='custom';syncReportFilters();drawReport()}$('fromDate').onchange=reportDateEdited;$('toDate').onchange=reportDateEdited;$('reportPreset').onchange=()=>{syncReportFilters();drawReport()};$('reportMonth').onchange=()=>{syncReportFilters();drawReport()};$('reportYear').onchange=()=>{syncReportFilters();drawReport()};$('pdfReport').onclick=()=>{let d=pdf();if(d)d.save('Sunset-Parking-Report.pdf')};
-$('waReport').onclick=async()=>{let d=pdf();if(!d)return;let file=new File([d.output('blob')],'Sunset-Parking-Report.pdf',{type:'application/pdf'});if(navigator.canShare?.({files:[file]})){try{await navigator.share({files:[file],title:'Laporan Sunset Venue Parking'});return}catch(e){if(e.name==='AbortError')return}}d.save('Sunset-Parking-Report.pdf');window.open('https://wa.me/?text='+encodeURIComponent('Laporan Sunset Venue Parking. PDF sudah diunduh, silakan lampirkan file PDF di WhatsApp.'),'_blank')};
+// ===== Laporan: satu sumber data untuk tampilan layar dan PDF =====
+const num=n=>new Intl.NumberFormat('id-ID',{maximumFractionDigits:0}).format(Math.round(Number(n)||0));
+const rp=n=>(Number(n)<0?'-Rp':'Rp')+num(Math.abs(Number(n)||0));
+const pct=n=>(Number.isFinite(n)?(n*100).toLocaleString('id-ID',{maximumFractionDigits:1}):'0')+'%';
+const ymd=s=>{const [y,m,d]=String(s).split('-').map(Number);return new Date(y,m-1,d)};
+const fmtDate=s=>s?new Intl.DateTimeFormat('id-ID',{day:'2-digit',month:'short',year:'numeric'}).format(ymd(s)):'—';
+const fmtDay=s=>new Intl.DateTimeFormat('id-ID',{weekday:'short',day:'2-digit',month:'short',year:'numeric'}).format(ymd(s));
+const titleCase=s=>s.toLowerCase().replace(/(^|\s)\S/g,c=>c.toUpperCase());
+function expenseCategorySummary(rows){
+ const map={};
+ rows.forEach(r=>(r.expenseItems||[]).forEach(x=>{
+  const raw=String(x.category||'Lainnya').trim().replace(/\s+/g,' '),k=raw.toLowerCase();
+  const g=map[k]??={variants:{},count:0,amount:0};
+  g.variants[raw]=(g.variants[raw]||0)+1;g.count++;g.amount+=Number(x.amount||0);
+ }));
+ const total=Object.values(map).reduce((s,g)=>s+g.amount,0);
+ return Object.values(map).map(g=>{
+  const v=Object.entries(g.variants).sort((a,b)=>b[1]-a[1]).map(x=>x[0]);
+  const name=v.find(x=>x!==x.toUpperCase())||titleCase(v[0]);
+  return{name,count:g.count,amount:g.amount,share:total?g.amount/total:0};
+ }).sort((a,b)=>b.amount-a.amount||a.name.localeCompare(b.name,'id'));
+}
+function reportData(){
+ const range=reportDateRange();
+ const rows=records.filter(r=>(!range.from||r.date>=range.from)&&(!range.to||r.date<=range.to)).sort((a,b)=>a.date.localeCompare(b.date));
+ const t=total(rows),days=rows.length;
+ const from=range.from||rows[0]?.date||'',to=range.to||rows[days-1]?.date||'';
+ return{
+  rows,t,days,from,to,
+  period:from||to?fmtDate(from)+' – '+fmtDate(to):'Semua data',
+  kpis:[
+   {label:'Total Pendapatan',value:rp(t.rev),note:days?'Rata-rata '+rp(t.rev/days)+' per hari':'—'},
+   {label:'Total Pengeluaran',value:rp(t.exp),note:pct(t.rev?t.exp/t.rev:0)+' dari pendapatan'},
+   {label:'Pendapatan Bersih',value:rp(t.net),note:'Margin '+pct(t.rev?t.net/t.rev:0)},
+   {label:'Hari Tercatat',value:days+' hari',note:rows.length?fmtDate(rows[0].date)+' – '+fmtDate(rows[days-1].date):'—'}
+  ],
+  shares:[['Sunset Venue','25%',t.sun],['Banjar Adat','25%',t.adat],['Petugas Parkir','50%',t.pool]],
+  staff:staffEarnings(rows).map(x=>({...x,avg:x.days?x.amount/x.days:0})),
+  categories:expenseCategorySummary(rows),
+  daily:rows.map(r=>{const c=calc(r);return{date:r.date,rev:r.revenue,exp:r.expenses,net:c.net,sunset:c.sunset,adat:c.adat,pool:c.pool,n:r.staff.length,each:c.each}})
+ };
+}
+// Kolom tabel dipakai sama persis di layar dan di PDF.
+const RPT_COLS={
+ shares:{head:['Penerima','Porsi','Jumlah'],num:[1,2]},
+ staff:{head:['Nama Petugas','Hari','Rata-rata/Hari','Total'],num:[1,2,3]},
+ categories:{head:['Kategori','Transaksi','Jumlah','Porsi'],num:[1,2,3]},
+ daily:{head:['Tanggal','Pendapatan','Pengeluaran','Bersih','Sunset 25%','Adat 25%','Petugas 50%','Petugas','Per Orang'],num:[1,2,3,4,5,6,7,8]}
+};
+function reportTables(R){
+ const st=R.staff.reduce((s,x)=>({days:s.days+x.days,amount:s.amount+x.amount}),{days:0,amount:0});
+ return{
+  shares:{body:R.shares.map(x=>[x[0],x[1],num(x[2])]),foot:['Total (Pendapatan Bersih)','100%',num(R.t.net)]},
+  staff:{body:R.staff.map(x=>[x.name,String(x.days),num(x.avg),num(x.amount)]),foot:['Total','',' ',num(st.amount)]},
+  categories:{body:R.categories.map(x=>[x.name,String(x.count),num(x.amount),pct(x.share)]),foot:['Total',String(R.categories.reduce((s,x)=>s+x.count,0)),num(R.t.exp),R.categories.length?'100%':'0%']},
+  daily:{body:R.daily.map(x=>[fmtDay(x.date),num(x.rev),num(x.exp),num(x.net),num(x.sunset),num(x.adat),num(x.pool),String(x.n),x.n?num(x.each):'—']),foot:['Total',num(R.t.rev),num(R.t.exp),num(R.t.net),num(R.t.sun),num(R.t.adat),num(R.t.pool),'','']}
+ };
+}
+function htmlTable(key,data,empty){
+ const c=RPT_COLS[key],cls=i=>c.num.includes(i)?' class="num"':'';
+ const head='<thead><tr>'+c.head.map((h,i)=>'<th'+cls(i)+'>'+esc(h)+'</th>').join('')+'</tr></thead>';
+ const body='<tbody>'+(data.body.length?data.body.map(r=>'<tr>'+r.map((v,i)=>'<td'+cls(i)+'>'+esc(v)+'</td>').join('')+'</tr>').join(''):'<tr><td colspan="'+c.head.length+'" class="empty">'+esc(empty)+'</td></tr>')+'</tbody>';
+ const foot=data.body.length?'<tfoot><tr>'+data.foot.map((v,i)=>'<td'+cls(i)+'>'+esc(v)+'</td>').join('')+'</tr></tfoot>':'';
+ return'<table class="rpt-table rpt-'+key+'">'+head+body+foot+'</table>';
+}
+function drawReport(){
+ const R=reportData(),T=reportTables(R);
+ report=R.rows;
+ setText('reportPeriodLabel','Periode: '+R.period);
+ setText('reportRecordCount',R.days+' hari tercatat');
+ $('rptKpis').innerHTML=R.kpis.map((k,i)=>'<div class="rpt-kpi'+(i===2?' is-net':'')+'"><span>'+esc(k.label)+'</span><strong>'+esc(k.value)+'</strong><small>'+esc(k.note)+'</small></div>').join('');
+ $('rptShares').innerHTML=htmlTable('shares',T.shares,'Tidak ada data.');
+ $('rptStaff').innerHTML=htmlTable('staff',T.staff,'Tidak ada petugas tercatat.');
+ $('rptCategories').innerHTML=htmlTable('categories',T.categories,'Tidak ada pengeluaran.');
+ $('rptDaily').innerHTML=htmlTable('daily',T.daily,'Tidak ada data pada periode ini.');
+}
+function pdf(){
+ const R=reportData(),T=reportTables(R);
+ if(!R.rows.length){alert('Tidak ada data laporan pada periode ini.');return null}
+ const {jsPDF}=window.jspdf,doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+ const W=doc.internal.pageSize.getWidth(),H=doc.internal.pageSize.getHeight(),M=14,CW=W-2*M;
+ const NAVY=[23,43,69],MUTED=[100,116,139],ORANGE=[214,120,38],LINE=[220,227,236],SOFT=[247,249,252],FOOT=[236,241,247];
+ const printed=new Intl.DateTimeFormat('id-ID',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date());
+ const title=(text,x,y)=>{doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(...NAVY);doc.text(text,x,y)};
+ const table=(key,data,opt)=>{const c=RPT_COLS[key];doc.autoTable(Object.assign({
+  head:[c.head],body:data.body,foot:data.body.length?[data.foot]:undefined,showFoot:'lastPage',theme:'grid',
+  styles:{fontSize:8,cellPadding:{top:1.8,bottom:1.8,left:2.2,right:2.2},lineColor:LINE,lineWidth:{bottom:.15},textColor:[41,56,78],overflow:'linebreak'},
+  headStyles:{fillColor:NAVY,textColor:255,fontStyle:'bold'},footStyles:{fillColor:FOOT,textColor:NAVY,fontStyle:'bold'},
+  alternateRowStyles:{fillColor:SOFT},margin:{left:M,right:M,top:16,bottom:16},
+  didParseCell:d=>{if(c.num.includes(d.column.index))d.cell.styles.halign='right'}
+ },opt));return doc.lastAutoTable.finalY};
+ // Kepala laporan
+ doc.setFillColor(...ORANGE);doc.rect(M,10,CW,1,'F');
+ doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(...ORANGE);doc.text('SUNSET VENUE PARKING',M,18);
+ doc.setFontSize(19);doc.setTextColor(...NAVY);doc.text('Laporan Keuangan',M,26.5);
+ doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.setTextColor(...MUTED);
+ doc.text('Periode: '+R.period,M,32.5);doc.text(R.days+' hari tercatat  |  Nilai dalam Rupiah',W-M,32.5,{align:'right'});
+ doc.setDrawColor(...LINE);doc.setLineWidth(.3);doc.line(M,36,W-M,36);
+ // 1. Ringkasan
+ let y=44;title('1. Ringkasan',M,y);
+ const gap=4,bw=(CW-gap*3)/4,bh=21;y+=3;
+ R.kpis.forEach((k,i)=>{const x=M+i*(bw+gap);
+  doc.setFillColor(...(i===2?[255,244,232]:SOFT));doc.setDrawColor(...(i===2?[240,200,160]:LINE));doc.roundedRect(x,y,bw,bh,2,2,'FD');
+  doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(...MUTED);doc.text(k.label.toUpperCase(),x+3.5,y+6);
+  doc.setFont('helvetica','bold');doc.setFontSize(12);doc.setTextColor(...NAVY);doc.text(k.value,x+3.5,y+12.8);
+  doc.setFont('helvetica','normal');doc.setFontSize(6.8);doc.setTextColor(...MUTED);doc.text(doc.splitTextToSize(k.note,bw-7)[0],x+3.5,y+17.8)});
+ y+=bh+11;
+ // 2 & 3 berdampingan
+ const half=(CW-6)/2;
+ title('2. Pembagian Hasil',M,y);title('3. Pendapatan Petugas',M+half+6,y);
+ const y1=table('shares',T.shares,{startY:y+3,tableWidth:half,margin:{left:M,right:M,top:16,bottom:16}});
+ const y2=table('staff',T.staff,{startY:y+3,tableWidth:half,margin:{left:M+half+6,right:M,top:16,bottom:16}});
+ y=Math.max(y1,y2)+11;
+ // 4. Pengeluaran per kategori
+ if(y>H-45){doc.addPage();y=22}
+ title('4. Pengeluaran per Kategori',M,y);y=table('categories',T.categories,{startY:y+3})+11;
+ // 5. Rincian harian
+ if(y>H-45){doc.addPage();y=22}
+ title('5. Rincian Harian',M,y);table('daily',T.daily,{startY:y+3,styles:{fontSize:7.5,cellPadding:{top:1.6,bottom:1.6,left:1.8,right:1.8},lineColor:LINE,lineWidth:{bottom:.15},textColor:[41,56,78]},columnStyles:{0:{cellWidth:27}}});
+ // Kaki halaman
+ const pages=doc.getNumberOfPages();
+ for(let i=1;i<=pages;i++){doc.setPage(i);doc.setDrawColor(...LINE);doc.setLineWidth(.2);doc.line(M,H-11,W-M,H-11);
+  doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(...MUTED);
+  doc.text('Sunset Venue Parking  |  Laporan Keuangan '+R.period+'  |  Dicetak '+printed,M,H-6.5);doc.text('Halaman '+i+' dari '+pages,W-M,H-6.5,{align:'right'})}
+ return doc;
+}
+function pdfName(){const R=reportData();return'Laporan-Parkir-Sunset-Venue'+(R.from?'_'+R.from+'_sd_'+R.to:'')+'.pdf'}
+function reportDateEdited(){$('reportPreset').value='custom';syncReportFilters();drawReport()}$('fromDate').onchange=reportDateEdited;$('toDate').onchange=reportDateEdited;$('reportPreset').onchange=()=>{syncReportFilters();drawReport()};$('reportMonth').onchange=()=>{syncReportFilters();drawReport()};$('reportYear').onchange=()=>{syncReportFilters();drawReport()};$('pdfReport').onclick=()=>{let d=pdf();if(d)d.save(pdfName())};
+$('waReport').onclick=async()=>{let d=pdf();if(!d)return;const name=pdfName();let file=new File([d.output('blob')],name,{type:'application/pdf'});if(navigator.canShare?.({files:[file]})){try{await navigator.share({files:[file],title:'Laporan Sunset Venue Parking'});return}catch(e){if(e.name==='AbortError')return}}d.save(name);window.open('https://wa.me/?text='+encodeURIComponent('Laporan Sunset Venue Parking. PDF sudah diunduh, silakan lampirkan file PDF di WhatsApp.'),'_blank')};
 function dateParse(v){if(v instanceof Date)return [v.getFullYear(),String(v.getMonth()+1).padStart(2,'0'),String(v.getDate()).padStart(2,'0')].join('-');if(typeof v==='number'){let d=XLSX.SSF.parse_date_code(v);if(d)return[d.y,String(d.m).padStart(2,'0'),String(d.d).padStart(2,'0')].join('-')}let s=String(v||'').trim();if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;let p=s.split(/[\/.-]/);if(p.length===3)return p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0');return''}
 $('importExcel').onclick=async()=>{
  if(!admin()){alert('Khusus Admin.');return}

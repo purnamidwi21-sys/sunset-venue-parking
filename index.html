@@ -271,6 +271,43 @@ button{font-size:16px;min-height:46px}
 .report-heading .report-period-chip{flex-shrink:0}
 @media(max-width:700px){.report-heading{align-items:stretch;flex-direction:column}.report-period-chip{min-width:0}.report-heading h2{font-size:24px}}
 
+
+/* Laporan: tampilan dokumen, sama dengan PDF */
+.report-filter-panel{margin-bottom:18px}
+.rpt-filter{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;align-items:end}
+.rpt-filter .field{margin:0;min-width:0}
+.rpt-filter input,.rpt-filter select{min-width:0;max-width:100%}
+.rpt-actions{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.rpt-actions button{width:100%;min-width:0;margin:0}
+@media(max-width:600px){.rpt-filter{grid-template-columns:1fr 1fr;gap:10px}.rpt-filter .field:nth-child(3),.rpt-filter .field:nth-child(4),.rpt-filter .field:nth-child(5){grid-column:1/-1}.rpt-actions{grid-template-columns:1fr}}
+.rpt-doc{background:#fff;border:1px solid #e1e7ef;border-top:4px solid #d67826;border-radius:14px;box-shadow:0 5px 18px rgba(29,48,75,.05);padding:28px 30px 30px}
+.rpt-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;padding-bottom:16px;border-bottom:1px solid #dce3ec;margin-bottom:6px}
+.rpt-eyebrow{font-size:12px;font-weight:800;letter-spacing:1.6px;color:#d67826}
+.rpt-head h2{font-size:28px;line-height:1.2;margin:4px 0 4px;color:#172b45}
+.rpt-head p{margin:0;color:#64748b;font-size:15px}
+.rpt-meta{display:flex;flex-direction:column;align-items:flex-end;gap:2px;color:#64748b;font-size:13px;text-align:right}
+.rpt-meta strong{color:#172b45;font-size:15px}
+.rpt-title{font-size:16px;color:#172b45;margin:24px 0 10px}
+.rpt-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.rpt-kpi{background:#f7f9fc;border:1px solid #dce3ec;border-radius:11px;padding:14px 16px;display:flex;flex-direction:column;gap:3px;min-width:0}
+.rpt-kpi span{font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:#64748b}
+.rpt-kpi strong{font-size:clamp(18px,1.7vw,23px);color:#172b45;line-height:1.25;overflow-wrap:anywhere}
+.rpt-kpi small{font-size:12.5px;color:#64748b}
+.rpt-kpi.is-net{background:#fff4e8;border-color:#f0c8a0}
+.rpt-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px}
+.rpt-grid>div{min-width:0}
+.rpt-doc .tablewrap{border:1px solid #dce3ec;border-radius:9px}
+.rpt-table{width:100%;min-width:0;border-collapse:collapse}
+.rpt-table th{background:#172b45;color:#fff;font-size:12px;font-weight:700;text-transform:none;letter-spacing:0;padding:9px 11px;white-space:nowrap}
+.rpt-table td{font-size:14px;padding:8px 11px;border-bottom:1px solid #e8edf3;color:#29384e;white-space:nowrap}
+.rpt-table tbody tr:nth-child(even) td{background:#f7f9fc}
+.rpt-table tfoot td{background:#ecf1f7;color:#172b45;font-weight:800;border-bottom:0}
+.rpt-table .num{text-align:right;font-variant-numeric:tabular-nums}
+.rpt-table .empty{text-align:center;color:#64748b;padding:18px}
+.rpt-daily{min-width:860px}
+@media(max-width:900px){.rpt-doc{padding:20px 16px}.rpt-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.rpt-grid{grid-template-columns:1fr;gap:0}}
+@media(max-width:600px){.rpt-head{flex-direction:column;align-items:flex-start}.rpt-meta{align-items:flex-start;text-align:left}.rpt-head h2{font-size:23px}.rpt-kpi{padding:12px}.rpt-table td{font-size:13px;padding:7px 9px}.rpt-table th{padding:8px 9px}}
+@media print{.side,.top,.report-filter-panel{display:none!important}.app{display:block}.main{padding:0}.rpt-doc{box-shadow:none;border:0}}
 </style>
 </head>
 <body>
@@ -325,53 +362,27 @@ button{font-size:16px;min-height:46px}
 </div>
 </section>
 <section id="reports" class="section">
-<div class="report-heading"><div><div class="report-eyebrow">SUNSET VENUE · PARKING FINANCE</div><h2>Laporan Keuangan</h2><p>Ringkasan pendapatan, biaya operasional, dan pembagian hasil.</p></div><div class="report-period-chip"><span>Periode laporan</span><strong id="reportPeriodLabel">—</strong><small id="reportRecordCount">0 hari tercatat</small></div></div>
 <div class="panel report-filter-panel">
-<div class="toolbar dashboard-period-toolbar report-period-toolbar">
-<div class="field dash-custom report-custom"><label>Tanggal Mulai</label><input type="date" id="fromDate"></div>
-<div class="field dash-custom report-custom"><label>Tanggal Akhir</label><input type="date" id="toDate"></div>
+<div class="rpt-filter">
+<div class="field report-custom"><label>Tanggal Mulai</label><input type="date" id="fromDate"></div>
+<div class="field report-custom"><label>Tanggal Akhir</label><input type="date" id="toDate"></div>
 <div class="field"><label>Rentang Tanggal</label><select id="reportPreset"><option value="custom">Rentang Tanggal</option><option value="month">Bulan</option><option value="year">Tahun</option><option value="all">Semua Data</option></select></div>
-<div class="field dash-month hidden"><label>Bulan</label><input type="month" id="reportMonth"></div>
-<div class="field dash-year hidden"><label>Tahun</label><input type="number" id="reportYear" min="2000" max="2100" step="1"></div>
-<button type="button" class="enter-action" id="reportEnter">↵ Enter · Terapkan</button><button class="secondary" id="pdfReport">Download PDF</button><button class="secondary" id="waReport">Kirim PDF ke WhatsApp</button>
+<div class="field hidden"><label>Bulan</label><input type="month" id="reportMonth"></div>
+<div class="field hidden"><label>Tahun</label><input type="number" id="reportYear" min="2000" max="2100" step="1"></div>
+<div class="rpt-actions"><button type="button" class="enter-action" id="reportEnter">↵ Enter · Terapkan</button><button class="secondary" id="pdfReport">Download PDF</button><button class="secondary" id="waReport">Kirim PDF ke WhatsApp</button></div>
 </div>
-
-<div class="panel report-panel" style="margin-top:15px">
-  <h2>Ringkasan Keuangan</h2>
-  <div class="shares">
-    <div class="share"><span>Total Revenue</span><strong id="rRevenue">Rp0</strong></div>
-    <div class="share"><span>Total Pengeluaran</span><strong id="rExpenses">Rp0</strong></div>
-    <div class="share"><span>Net Revenue</span><strong id="rNet">Rp0</strong></div>
-  </div>
 </div>
-
-<div class="panel report-panel" style="margin-top:15px">
-  <h2>Rekap Pembagian Hasil</h2>
-  <div class="shares">
-    <div class="share"><span>Sunset Venue · 25%</span><strong id="rSunset">Rp0</strong></div>
-    <div class="share"><span>Banjar Adat · 25%</span><strong id="rAdat">Rp0</strong></div>
-  </div>
+<article class="rpt-doc">
+<header class="rpt-head"><div><div class="rpt-eyebrow">SUNSET VENUE PARKING</div><h2>Laporan Keuangan</h2><p id="reportPeriodLabel">Periode: —</p></div><div class="rpt-meta"><strong id="reportRecordCount">0 hari tercatat</strong><span>Nilai dalam Rupiah</span></div></header>
+<h3 class="rpt-title">1. Ringkasan</h3>
+<div class="rpt-kpis" id="rptKpis"></div>
+<div class="rpt-grid">
+<div><h3 class="rpt-title">2. Pembagian Hasil</h3><div class="tablewrap" id="rptShares"></div></div>
+<div><h3 class="rpt-title">3. Pendapatan Petugas</h3><div class="tablewrap" id="rptStaff"></div></div>
 </div>
-
-<div class="panel report-panel" style="margin-top:15px">
-  <h2>Rincian Pendapatan Petugas Parkir</h2>
-  <div class="tablewrap">
-    <table>
-      <thead>
-        <tr>
-          <th>Nama Petugas</th>
-          <th>Hari Bertugas</th>
-          <th>Total Pendapatan</th>
-        </tr>
-      </thead>
-      <tbody id="reportStaffSummaryRows"></tbody>
-    </table>
-  </div>
-</div>
-
-
-<div class="panel report-table-panel"><div class="section-heading"><div><h2>Rincian Harian</h2><p>Perbandingan pendapatan, biaya, dan pembagian per tanggal.</p></div></div><div class="tablewrap"><table class="report-table"><thead><tr><th>Tanggal</th><th>Revenue</th><th>Pengeluaran</th><th>Net</th><th>Sunset 25%</th><th>Adat 25%</th><th>Petugas 50%</th><th>Petugas bertugas</th></tr></thead><tbody id="reportRows"></tbody></table></div></div>
-</div>
+<h3 class="rpt-title">4. Pengeluaran per Kategori</h3><div class="tablewrap" id="rptCategories"></div>
+<h3 class="rpt-title">5. Rincian Harian</h3><div class="tablewrap" id="rptDaily"></div>
+</article>
 </section>
 <section id="history" class="section">
 <div class="panel">
@@ -385,5 +396,5 @@ button{font-size:16px;min-height:46px}
 </section>
 </main>
 </div>
-<script src="app.js?v=staff-name-match-20261109-01"></script>
+<script src="app.js?v=report-redesign-20261109-02"></script>
 </body></html>
