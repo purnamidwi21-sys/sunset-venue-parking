@@ -179,15 +179,27 @@ function drawHistory(){
 }
 function reportDateRange(){const p=$('reportPreset').value,dt=today();if(p==='all')return{from:'',to:''};if(p==='month'){const m=$('reportMonth').value||dt.slice(0,7),last=new Date(+m.slice(0,4),+m.slice(5,7),0).getDate();return{from:m+'-01',to:m+'-'+String(last).padStart(2,'0')}}if(p==='year'){const y=$('reportYear').value||dt.slice(0,4);return{from:y+'-01-01',to:y+'-12-31'}}return{from:$('fromDate').value,to:$('toDate').value}}
 function syncReportFilters(){const p=$('reportPreset').value;document.querySelectorAll('.report-custom').forEach(x=>{x.classList.toggle('hidden',p==='all');const input=x.querySelector('input');if(input)input.disabled=false});$('reportMonth').parentElement.classList.toggle('hidden',p!=='month');$('reportYear').parentElement.classList.toggle('hidden',p!=='year');if(p==='month'||p==='year'){const r=reportDateRange();$('fromDate').value=r.from;$('toDate').value=r.to}}
-function drawReport(){const range=reportDateRange(),from=range.from,to=range.to;report=records.filter(r=>(!from||r.date>=from)&&(!to||r.date<=to)).sort((a,b)=>a.date.localeCompare(b.date));
-  const staffNames=[...new Set([...STAFF,...records.flatMap(r=>r.staff||[])])].sort((a,b)=>{const ai=STAFF.indexOf(a),bi=STAFF.indexOf(b);if(ai>=0&&bi>=0)return ai-bi;if(ai>=0)return -1;if(bi>=0)return 1;return a.localeCompare(b,'id')});
-  const staffFilter=$('reportStaffFilter'),previousStaff=staffFilter.value;staffFilter.innerHTML='<option value="">Semua petugas</option>'+staffNames.map(n=>'<option value="'+esc(n)+'">'+esc(n)+'</option>').join('');if(staffNames.includes(previousStaff))staffFilter.value=previousStaff;
- $('reportRows').innerHTML=report.length?report.map(r=>{let c=calc(r);return'<tr><td>'+r.date+'</td><td>'+money(r.revenue)+'</td><td>'+money(r.expenses)+'</td><td>'+money(c.net)+'</td><td>'+money(c.sunset)+'</td><td>'+money(c.adat)+'</td><td>'+money(c.pool)+'</td><td>'+esc(r.staff.join(', '))+'</td></tr>'}).join(''):'<tr><td colspan="8" class="empty">Tidak ada data pada periode ini.</td></tr>';
- const selectedStaff=$('reportStaffFilter').value;
+function drawReport(){
+ const range=reportDateRange(),from=range.from,to=range.to;
+ report=records.filter(r=>(!from||r.date>=from)&&(!to||r.date<=to)).sort((a,b)=>a.date.localeCompare(b.date));
+ const t=total(report),selectedBefore=$('reportStaffFilter').value;
+ const staffNames=[...new Set([...STAFF,...records.flatMap(r=>r.staff||[])])].sort((a,b)=>{const ai=STAFF.indexOf(a),bi=STAFF.indexOf(b);if(ai>=0&&bi>=0)return ai-bi;if(ai>=0)return -1;if(bi>=0)return 1;return a.localeCompare(b,'id')});
+ const staffFilter=$('reportStaffFilter');
+ staffFilter.innerHTML='<option value="">Semua petugas</option>'+staffNames.map(n=>'<option value="'+esc(n)+'">'+esc(n)+'</option>').join('');
+ if(staffNames.includes(selectedBefore))staffFilter.value=selectedBefore;
+ const selectedStaff=staffFilter.value;
+ setText('reportPeriodLabel',report.length?(from||report[0].date)+' s.d. '+(to||report[report.length-1].date):'Tidak ada periode data');
+ setText('reportRecordCount',report.length+' hari tercatat');
+ setText('rRevenue',money(t.rev));setText('rExpenses',money(t.exp));setText('rNet',money(t.net));
+ setText('rSunset',money(t.sun));setText('rAdat',money(t.adat));setText('rStaff',money(t.pool));
+ $('reportRows').innerHTML=report.length?report.map(r=>{const c=calc(r);return'<tr><td>'+esc(r.date)+'</td><td class="num">'+money(r.revenue)+'</td><td class="num">'+money(r.expenses)+'</td><td class="num strong">'+money(c.net)+'</td><td class="num">'+money(c.sunset)+'</td><td class="num">'+money(c.adat)+'</td><td class="num">'+money(c.pool)+'</td><td>'+esc(r.staff.join(', '))+'</td></tr>'}).join(''):'<tr><td colspan="8" class="empty">Tidak ada data pada periode ini.</td></tr>';
  const dailyStaffLines=report.flatMap(r=>{const c=calc(r);return(r.staff||[]).filter(n=>!selectedStaff||n===selectedStaff).map(name=>({date:r.date,name,amount:c.each}))}).sort((a,b)=>a.date.localeCompare(b.date)||STAFF.indexOf(a.name)-STAFF.indexOf(b.name));
- $('reportDailyStaffRows').innerHTML=dailyStaffLines.length?dailyStaffLines.map(x=>'<tr><td>'+esc(x.date)+'</td><td>'+esc(x.name)+'</td><td>'+money(x.amount)+'</td></tr>').join(''):'<tr><td colspan="3" class="empty">Tidak ada data petugas pada periode ini.</td></tr>';
- const settlements=settlementRows(report);
- const totalDue=settlements.reduce((s,x)=>s+x.due,0),totalPaid=settlements.reduce((s,x)=>s+x.paid,0),balance=totalBalance(report);
+ $('reportDailyStaffRows').innerHTML=dailyStaffLines.length?dailyStaffLines.map(x=>'<tr><td>'+esc(x.date)+'</td><td>'+esc(x.name)+'</td><td class="num">'+money(x.amount)+'</td></tr>').join(''):'<tr><td colspan="3" class="empty">Tidak ada data petugas pada periode ini.</td></tr>';
+ const settlements=settlementRows(report),totalDue=settlements.reduce((s,x)=>s+x.due,0),totalPaid=settlements.reduce((s,x)=>s+x.paid,0),balance=settlements.reduce((s,x)=>s+Math.max(0,x.balance),0);
+ $('reportSettlementRows').innerHTML=settlements.length?settlements.map(x=>'<tr><td>'+esc(x.name)+'</td><td class="num">'+money(x.due)+'</td><td class="num">'+money(x.paid)+'</td><td class="num">'+money(Math.max(0,x.balance))+'</td></tr>').join(''):'<tr><td colspan="4" class="empty">Belum ada rincian pembayaran.</td></tr>';
+ $('reportSettlementFoot').innerHTML='<tr><th>TOTAL</th><th class="num">'+money(totalDue)+'</th><th class="num">'+money(totalPaid)+'</th><th class="num">'+money(balance)+'</th></tr>';
+ const summaries=staffEarnings(report).filter(x=>!selectedStaff||x.name===selectedStaff);
+ $('reportStaffSummaryRows').innerHTML=summaries.length?summaries.map(x=>'<tr><td>'+esc(x.name)+'</td><td class="num">'+x.days+'</td><td class="num strong">'+money(x.amount)+'</td></tr>').join(''):'<tr><td colspan="3" class="empty">Tidak ada data petugas pada periode ini.</td></tr>';
 }
 function setupRealtime(){if(realtimeChannel)db.removeChannel(realtimeChannel);realtimeChannel=db.channel('parking-data-live').on('postgres_changes',{event:'*',schema:'public',table:'daily_records'},async()=>{await loadData();draw()}).on('postgres_changes',{event:'*',schema:'public',table:'staff_duty'},async()=>{await loadData();draw()}).on('postgres_changes',{event:'*',schema:'public',table:'expense_items'},async()=>{await loadData();draw()}).on('postgres_changes',{event:'*',schema:'public',table:'payout_payments'},async()=>{await loadData();draw()}).subscribe();if(refreshTimer)clearInterval(refreshTimer);refreshTimer=setInterval(async()=>{if(!user)return;try{await loadData();draw()}catch(e){console.warn('Auto refresh:',e.message)}},30000)}
 function draw(){drawDash();drawHistory();if($('reports').classList.contains('active'))drawReport()}
