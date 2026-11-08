@@ -95,7 +95,7 @@ function settlementLines(rows){
   const c=calc(r);
   const entitlements=[
    {type:'sunset',name:'Sunset Venue',amount:c.sunset},
-   {type:'adat',name:'Desa Adat',amount:c.adat},
+   {type:'adat',name:'Banjar Adat',amount:c.adat},
    ...(r.staff||[]).map(name=>({type:'staff',name,amount:c.each}))
   ];
   entitlements.forEach(e=>{
@@ -214,7 +214,7 @@ function collectExpenseItemsSafe(){try{return collectExpenseItems()}catch(e){ret
 function preview(){
  const rev=Number($('revenue').value)||0,items=collectExpenseItemsSafe(),exp=items.reduce((s,x)=>s+x.amount,0),st=chosen(),net=rev-exp,pool=net*.5;
  setText('expenseTotal',money(exp));
- $('preview').innerHTML='<div class="preview-line"><span>Total biaya:</span> <b>'+money(exp)+'</b> <span class="preview-dot">·</span> <span>Net revenue:</span> <b>'+money(net)+'</b></div><div class="preview-line"><span>Sunset Venue 25%:</span> <b>'+money(net*.25)+'</b> <span class="preview-dot">·</span> <span>Desa Adat 25%:</span> <b>'+money(net*.25)+'</b> <span class="preview-dot">·</span> <span>Petugas 50%:</span> <b>'+money(pool)+'</b> <span class="preview-count">('+st.length+' orang'+(st.length?' · '+money(pool/st.length)+' per orang':' · pilih petugas')+')</span></div>';
+ $('preview').innerHTML='<div class="preview-line"><span>Total biaya:</span> <b>'+money(exp)+'</b> <span class="preview-dot">·</span> <span>Net revenue:</span> <b>'+money(net)+'</b></div><div class="preview-line"><span>Sunset Venue 25%:</span> <b>'+money(net*.25)+'</b> <span class="preview-dot">·</span> <span>Banjar Adat 25%:</span> <b>'+money(net*.25)+'</b> <span class="preview-dot">·</span> <span>Petugas 50%:</span> <b>'+money(pool)+'</b> <span class="preview-count">('+st.length+' orang'+(st.length?' · '+money(pool/st.length)+' per orang':' · pilih petugas')+')</span></div>';
 }
 // Enter sebagai pintasan utama di seluruh aplikasi
 document.addEventListener('keydown',e=>{
@@ -248,7 +248,7 @@ function pdf(){if(!report.length){alert('Tidak ada data laporan.');return null}
  const costDetails=[];report.forEach(r=>(r.expenseItems||[]).forEach(x=>costDetails.push([r.date,x.category,money(x.amount),x.description||''])));
  doc.autoTable({startY:y+4,head:[['Tanggal','Item pengeluaran','Nominal','Keterangan']],body:costDetails,foot:[['','','TOTAL',money(t.exp)]],styles:{fontSize:8},theme:'grid'});
  y=doc.lastAutoTable.finalY+12;doc.setFontSize(13);doc.text('3. Pembagian hasil',14,y);
- doc.autoTable({startY:y+4,head:[['Tanggal','Net Revenue','Sunset Venue 25%','Desa Adat 25%','Petugas 50%','Nama petugas']],body:report.map(r=>{const c=calc(r);return[r.date,money(c.net),money(c.sunset),money(c.adat),money(c.pool),r.staff.join(', ')]}),foot:[['TOTAL',money(t.net),money(t.sun),money(t.adat),money(t.pool),'']],styles:{fontSize:8},theme:'grid'});return doc}
+ doc.autoTable({startY:y+4,head:[['Tanggal','Net Revenue','Sunset Venue 25%','Banjar Adat 25%','Petugas 50%','Nama petugas']],body:report.map(r=>{const c=calc(r);return[r.date,money(c.net),money(c.sunset),money(c.adat),money(c.pool),r.staff.join(', ')]}),foot:[['TOTAL',money(t.net),money(t.sun),money(t.adat),money(t.pool),'']],styles:{fontSize:8},theme:'grid'});return doc}
 function reportDateEdited(){$('reportPreset').value='custom';syncReportFilters();drawReport()}$('fromDate').onchange=reportDateEdited;$('toDate').onchange=reportDateEdited;$('reportPreset').onchange=()=>{syncReportFilters();drawReport()};$('reportMonth').onchange=drawReport;$('reportYear').onchange=drawReport;$('reportStaffFilter').onchange=drawReport;$('pdfReport').onclick=()=>{let d=pdf();if(d)d.save('Sunset-Parking-Report.pdf')};
 $('waReport').onclick=async()=>{let d=pdf();if(!d)return;let file=new File([d.output('blob')],'Sunset-Parking-Report.pdf',{type:'application/pdf'});if(navigator.canShare?.({files:[file]})){try{await navigator.share({files:[file],title:'Laporan Sunset Venue Parking'});return}catch(e){if(e.name==='AbortError')return}}d.save('Sunset-Parking-Report.pdf');window.open('https://wa.me/?text='+encodeURIComponent('Laporan Sunset Venue Parking. PDF sudah diunduh, silakan lampirkan file PDF di WhatsApp.'),'_blank')};
 function dateParse(v){if(v instanceof Date)return [v.getFullYear(),String(v.getMonth()+1).padStart(2,'0'),String(v.getDate()).padStart(2,'0')].join('-');if(typeof v==='number'){let d=XLSX.SSF.parse_date_code(v);if(d)return[d.y,String(d.m).padStart(2,'0'),String(d.d).padStart(2,'0')].join('-')}let s=String(v||'').trim();if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;let p=s.split(/[\/.-]/);if(p.length===3)return p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0');return''}
