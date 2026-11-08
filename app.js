@@ -1,8 +1,17 @@
 (() => {
 const URL='https://dsvdtqypumwjevgtoghr.supabase.co';
 const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRzdmR0cXlwdW13amV2Z3RvZ2hyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTM4NzczNDUsImV4cCI6MjEwOTQ1MzM0NX0.VoCbLhxttbPPKtNqKaQPC-XQaHg9q48V5vyL0eDpZko';
-const db=window.supabase.createClient(URL,KEY), STAFF=['Pak Manik','Pak Bayu','Pak Gangga','Pak Riki','Pak Dek Putra'], IMPORT_STAFF=['Pak Manik','Pak Bayu','Pak Ganes','Pak Gangga','Pak Riki','Pak Dilan','Pak Dek Putra'];
-let user=null,profile=null,staffRows=[],records=[],report=[],dashRows=[],payouts=[],paymentBusy=false,realtimeChannel=null,refreshTimer=null;
+const db=window.supabase.createClient(URL,KEY), STAFF=['Pak Manik','Pak Bayu','Pak Gangga','Pak Riki','Pak Dek Putra'];
+let user=null,profile=null,staffRows=[],records=[],report=[],dashRows=[],payouts=[],paymentBusy=false,realtimeChannel=null,refreshTimer=null,staffChecksSig='';
+// Nama petugas dicocokkan tanpa membedakan huruf besar-kecil, sapaan "Pak", dan ejaan Riki/Riky.
+const NAME_ALIASES={riky:'riki'};
+const nameKey=s=>{let k=String(s??'').toLowerCase().replace(/\s+/g,' ').trim().replace(/^(pak|bapak|bpk)\.?\s+/,'');return NAME_ALIASES[k]||k};
+const staffIndex=name=>STAFF.findIndex(x=>nameKey(x)===nameKey(name));
+const staffCompare=(a,b)=>{const ai=staffIndex(a),bi=staffIndex(b);if(ai>=0&&bi>=0)return ai-bi;if(ai>=0)return -1;if(bi>=0)return 1;return a.localeCompare(b,'id')};
+const findStaffRow=name=>staffRows.find(x=>nameKey(x.full_name)===nameKey(name));
+const splitNames=v=>String(v??'').split(/[,;|]/).map(x=>x.trim()).filter(Boolean);
+// Label checkbox memakai nama persis seperti di database bila ada.
+const staffLabels=()=>STAFF.map(n=>findStaffRow(n)?.full_name||n);
 const $=id=>document.getElementById(id), setText=(id,value)=>{const el=$(id);if(el)el.textContent=String(value??'')}, money=n=>new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(n)||0);
 const parseAmount=value=>{
  if(typeof value==='number')return Number.isFinite(value)?value:0;
@@ -58,13 +67,26 @@ async function loadData(){
   const sum=items.reduce((s,z)=>s+z.amount,0);
   return{id:x.id,date:x.record_date,revenue:Number(x.total_revenue),expenses:items.length?sum:legacy,expenseItems:items,note:x.note||'',staff:(duty[x.id]||[]).filter(Boolean),source:x.source};
  });
- $('staffChecks').innerHTML=STAFF.map((x,i)=>'<label class="stafftag"><input type="checkbox" id="st'+i+'">'+x+'</label>').join('')+'<label class="stafftag staff-all"><input type="checkbox" id="stAll">Semua Bertugas</label>';
- const all=$('stAll');
- if(all)all.onchange=()=>{STAFF.forEach((x,i)=>{const el=$('st'+i);if(el)el.checked=all.checked});preview()};
- STAFF.forEach((x,i)=>{const el=$('st'+i);if(el)el.onchange=()=>{if(all)all.checked=STAFF.every((n,k)=>$('st'+k)?.checked);preview()}});
+ renderStaffChecks();
 }
-const chosen=()=>STAFF.filter((x,i)=>$('st'+i)?.checked);
-async function saveRecord(r){
+// Dibuat ulang hanya bila daftar nama berubah, dan centang yang sudah dipilih tetap dipertahankan
+// (sebelumnya centang hilang setiap auto-refresh 30 detik).
+function renderStaffChecks(){
+ const labels=staffLabels(),sig=labels.join('|');
+ if(sig===staffChecksSig&&$('st0'))return;
+ const keep=new Set(chosen().map(nameKey));
+ staffChecksSig=sig;
+ $('staffChecks').innerHTML=labels.map((x,i)=>'<label class="stafftag"><input type="checkbox" id="st'+i+'">'+esc(x)+'</label>').join('')+'<label class="stafftag staff-all"><input type="checkbox" id="stAll">Semua Bertugas</label>';
+ const all=$('stAll');
+ labels.forEach((x,i)=>{const el=$('st'+i);if(el)el.checked=keep.has(nameKey(x))});
+ if(all){all.checked=labels.every((n,k)=>$('st'+k)?.checked);all.onchange=()=>{labels.forEach((x,i)=>{const el=$('st'+i);if(el)el.checked=all.checked});preview()}}
+ labels.forEach((x,i)=>{const el=$('st'+i);if(el)el.onchange=()=>{if(all)all.checked=labels.every((n,k)=>$('st'+k)?.checked);preview()}});
+ if(keep.size)preview();
+}
+function chosen(){return staffLabels().filter((x,i)=>$('st'+i)?.checked)}
+async function saveRecord(r,{reload=true}={}){
+ const unknown=(r.staff||[]).filter(n=>!findStaffRow(n));
+ if(unknown.length)throw new Error('Nama petugas tidak ada di database: '+unknown.join(', ')+'. Data tanggal '+r.date+' tidak disimpan.');
  const items=(r.expenseItems||[]).filter(x=>Number(x.amount)>0);
  const expenseTotal=items.reduce((s,x)=>s+Number(x.amount),0);
  const {data,error}=await db.from('daily_records').upsert({record_date:r.date,total_revenue:r.revenue,total_expenses:expenseTotal,note:r.note||'',source:r.source||'manual',created_by:user.id,updated_at:new Date().toISOString()},{onConflict:'record_date'}).select('id').single();
@@ -73,9 +95,9 @@ async function saveRecord(r){
  const {error:ce}=await db.from('expense_items').delete().eq('daily_record_id',id);if(ce)throw ce;
  if(items.length){const {error:ei}=await db.from('expense_items').insert(items.map(x=>({daily_record_id:id,category:x.category,amount:Number(x.amount),description:x.description||''})));if(ei)throw ei}
  const {error:de}=await db.from('staff_duty').delete().eq('daily_record_id',id);if(de)throw de;
- const ids=(r.staff||[]).map(n=>staffRows.find(x=>x.full_name===n)?.id).filter(Boolean);
+ const ids=[...new Set((r.staff||[]).map(n=>findStaffRow(n)?.id).filter(Boolean))];
  if(ids.length){const {error:ie}=await db.from('staff_duty').insert(ids.map(staff_id=>({daily_record_id:id,staff_id})));if(ie)throw ie}
- await loadData();
+ if(reload)await loadData();
 }
 function total(a){return a.reduce((t,r)=>{let c=calc(r);t.rev+=r.revenue;t.exp+=r.expenses;t.net+=c.net;t.sun+=c.sunset;t.adat+=c.adat;t.pool+=c.pool;return t},{rev:0,exp:0,net:0,sun:0,adat:0,pool:0})}
 function expenseCategoryTotals(rows){
@@ -115,7 +137,7 @@ function settlementRows(rows){
   if(line.balance>0.009)map[key].items.push(line);
  });
  const order={'sunset':0,'adat':1,'staff':2};
- return Object.values(map).sort((a,b)=>(order[a.type]-order[b.type])||((STAFF.indexOf(a.name)<0?999:STAFF.indexOf(a.name))-(STAFF.indexOf(b.name)<0?999:STAFF.indexOf(b.name))));
+ return Object.values(map).sort((a,b)=>(order[a.type]-order[b.type])||staffCompare(a.name,b.name));
 }
 function totalBalance(rows){return settlementLines(rows).reduce((s,x)=>s+Math.max(0,x.balance),0)}
 async function payRecipient(type,name){
@@ -155,12 +177,13 @@ function staffEarnings(rows){
  rows.forEach(r=>{
   const c=calc(r);
   (r.staff||[]).forEach(name=>{
-   if(!out[name])out[name]={name:name,days:0,amount:0};
-   out[name].days++;
-   out[name].amount+=c.each;
+   const k=nameKey(name);
+   if(!out[k])out[k]={name:name,days:0,amount:0};
+   out[k].days++;
+   out[k].amount+=c.each;
   });
  });
- return Object.keys(out).sort((a,b)=>{const ai=STAFF.indexOf(a),bi=STAFF.indexOf(b);if(ai>=0&&bi>=0)return ai-bi;if(ai>=0)return -1;if(bi>=0)return 1;return a.localeCompare(b,'id')}).map(name=>out[name]);
+ return Object.values(out).sort((a,b)=>staffCompare(a.name,b.name));
 }
 function dashDateRange(){const p=$('dashPreset').value,dt=today();if(p==='all')return{from:'',to:''};if(p==='month'){const m=$('dashMonth').value||dt.slice(0,7),last=new Date(+m.slice(0,4),+m.slice(5,7),0).getDate();return{from:m+'-01',to:m+'-'+String(last).padStart(2,'0')}}if(p==='year'){const y=$('dashYear').value||dt.slice(0,4);return{from:y+'-01-01',to:y+'-12-31'}}return{from:$('dashStart').value,to:$('dashEnd').value}}
 function syncDashFilters(){const p=$('dashPreset').value;const custom=p==='custom';document.querySelectorAll('.dash-custom').forEach(x=>{x.classList.toggle('hidden',p==='all');const input=x.querySelector('input');if(input)input.disabled=!custom});$('dashMonth').parentElement.classList.toggle('hidden',p!=='month');$('dashYear').parentElement.classList.toggle('hidden',p!=='year');if(p==='month'||p==='year'){const r=dashDateRange();$('dashStart').value=r.from;$('dashEnd').value=r.to}}
@@ -264,7 +287,7 @@ $('importExcel').onclick=async()=>{
  try{
   let wb=XLSX.read(await f.arrayBuffer(),{type:'array',cellDates:true});
   let rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});
-  let added=0,updated=0,skipped=0;
+  let added=0,updated=0,skipped=0;const unknownStaff=new Set(),failed=[];
   const grouped=new Map();
   for(const row of rows){
    let o={};
@@ -286,10 +309,10 @@ $('importExcel').onclick=async()=>{
      if(amount>0)rec.expenseItems.push({category:description||'Biaya',amount,description:''});
      else if(description)rec.note=[rec.note,'Biaya tanpa nominal: '+description].filter(Boolean).join(' | ');
     }else if(category==='petugas parkir'){
-     const names=description.split(/[,;|]/).map(x=>x.trim()).filter(x=>IMPORT_STAFF.includes(x));
-     rec.staff=[...new Set([...rec.staff,...names])];
-     const unknown=description.split(/[,;|]/).map(x=>x.trim()).filter(x=>x&&!IMPORT_STAFF.includes(x));
-     if(unknown.length)rec.note=[rec.note,'Nama petugas tidak dikenali: '+unknown.join(', ')].filter(Boolean).join(' | ');
+     const names=splitNames(description);
+     names.filter(x=>!findStaffRow(x)).forEach(x=>unknownStaff.add(x));
+     const merged=[...rec.staff];names.forEach(x=>{if(!merged.some(y=>nameKey(y)===nameKey(x)))merged.push(x)});
+     rec.staff=merged;
     }else if(category==='setoran'){
      if(incoming>0)rec.note=[rec.note,'Setoran masuk '+(description?description+' ':'')+money(incoming)].filter(Boolean).join(' | ');
      if(outgoing>0)rec.note=[rec.note,'Setoran keluar '+(description?description+' ':'')+money(outgoing)].filter(Boolean).join(' | ');
@@ -303,7 +326,8 @@ $('importExcel').onclick=async()=>{
    const legacyCell=o.pengeluaran??o.expenses??o.totalpengeluaran??0;
    const legacyExp=parseAmount(legacyCell);
    if(!date||!Number.isFinite(rev)||!Number.isFinite(legacyExp)||rev<0||legacyExp<0){skipped++;continue}
-   const names=String(o.petugas??o.staff??'').split(/[,;|]/).map(x=>x.trim()).filter(x=>IMPORT_STAFF.includes(x));
+   const names=splitNames(o.petugas??o.staff);
+   names.filter(x=>!findStaffRow(x)).forEach(x=>unknownStaff.add(x));
    const note=String(o.catatan??o.note??'').trim();
    const isLongExpenseFormat=Object.prototype.hasOwnProperty.call(o,'itempengeluaran')||
     Object.prototype.hasOwnProperty.call(o,'itembiaya')||
@@ -350,14 +374,20 @@ $('importExcel').onclick=async()=>{
    if(!expenseItems.length&&legacyExp>0)expenseItems=[{category:'Biaya lama (belum dirinci)',amount:legacyExp,description:'Diimpor dari kolom pengeluaran total'}];
    grouped.set(date,{date,revenue:rev,expenses:expenseItems.reduce((sum,x)=>sum+x.amount,0),expenseItems,staff:names,note,source:'excel_import'});
   }
+  // Jangan simpan apa pun bila ada nama petugas yang tidak dikenal: pembagian 50% akan salah.
+  if(unknownStaff.size){setText('importMessage','Import dibatalkan, tidak ada data yang diubah. Nama petugas tidak ditemukan di database: '+[...unknownStaff].join(', ')+'. Perbaiki ejaan di Excel atau tambahkan nama tersebut ke tabel staff, lalu import ulang.');return}
+  if(!grouped.size){setText('importMessage','Tidak ada baris bertanggal yang bisa diimpor.');return}
+  let done=0;
   for(const rec of grouped.values()){
    rec.expenses=(rec.expenseItems||[]).reduce((sum,x)=>sum+Number(x.amount||0),0);
    const exists=records.some(x=>x.date===rec.date);
-   try{await saveRecord(rec);if(exists)updated++;else added++}
-   catch(e){skipped++}
+   try{await saveRecord(rec,{reload:false});if(exists)updated++;else added++}
+   catch(e){failed.push(rec.date+' ('+e.message+')')}
+   done++;if(done%10===0)setText('importMessage','Mengimpor... '+done+' dari '+grouped.size+' tanggal');
   }
-  await db.from('import_history').insert({file_name:f.name,rows_read:rows.length,rows_added:added,rows_updated:updated,rows_skipped:skipped,imported_by:user.id});
-  setText('importMessage','Import selesai: '+added+' baru, '+updated+' diperbarui, '+skipped+' baris dilewati.');draw();
+  await loadData();
+  await db.from('import_history').insert({file_name:f.name,rows_read:rows.length,rows_added:added,rows_updated:updated,rows_skipped:skipped+failed.length,imported_by:user.id});
+  setText('importMessage','Import selesai: '+added+' tanggal baru, '+updated+' diperbarui, '+skipped+' baris dilewati.'+(failed.length?' GAGAL disimpan '+failed.length+' tanggal: '+failed.join('; '):''));draw();
  }catch(e){setText('importMessage','Import gagal: '+e.message)}
 };
 $('exportExcel').onclick=()=>{
