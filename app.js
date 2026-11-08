@@ -36,12 +36,60 @@ const today=()=>{let d=new Date();return [d.getFullYear(),String(d.getMonth()+1)
 const admin=()=>profile?.role==='admin', esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const calc=r=>{let n=Number(r.revenue)-Number(r.expenses),p=n*.5;return{net:n,sunset:n*.25,adat:n*.25,pool:p,each:r.staff.length?p/r.staff.length:0}};
 function showLogin(s=''){$('loginScreen').style.display='grid';$('app').classList.add('hidden');setText('loginMessage',s)}
+// ===== Satu perangkat login dalam satu waktu =====
+// Kunci disimpan di Supabase (upgrade_single_login.sql). Perangkat lain ditolak selama
+// pemegang kunci masih aktif; kunci bebas setelah logout, tab ditutup, atau 5 menit tidak aktif.
+const DEVICE_ID=(()=>{const make=()=>(crypto?.randomUUID?.()||Date.now().toString(36)+Math.random().toString(36).slice(2));try{let v=localStorage.getItem('svp-device-id');if(!v){v=make();localStorage.setItem('svp-device-id',v)}return v}catch(e){return make()}})();
+let lockEnabled=true,lockTimer=null,accessToken='',loginNotice='';
+const timeOf=s=>s?new Intl.DateTimeFormat('id-ID',{hour:'2-digit',minute:'2-digit'}).format(new Date(s)):'';
+const missingFn=e=>e&&(e.code==='PGRST202'||e.code==='42883'||/could not find the function|does not exist/i.test(e.message||''));
+async function claimLock(){
+ let {data,error}=await db.rpc('claim_app_session',{p_device:DEVICE_ID,p_force:false});
+ if(missingFn(error)){lockEnabled=false;console.warn('Kunci login belum aktif: jalankan upgrade_single_login.sql di Supabase.');return true}
+ if(error)throw error;
+ if(data?.ok)return true;
+ const who=data?.holder||'pengguna lain',since=timeOf(data?.since),seen=timeOf(data?.last_seen);
+ if(admin()&&confirm('Aplikasi sedang dipakai oleh '+who+(since?' sejak '+since:'')+'.\n\nAmbil alih? Perangkat tersebut akan otomatis keluar.')){
+  ({data,error}=await db.rpc('claim_app_session',{p_device:DEVICE_ID,p_force:true}));
+  if(error)throw error;
+  if(data?.ok)return true;
+ }
+ loginNotice='Aplikasi sedang dipakai oleh '+who+(since?' sejak pukul '+since:'')+(seen?' (aktif terakhir '+seen+')':'')+'. Hanya 1 orang yang bisa masuk dalam satu waktu. Coba lagi setelah '+who+' logout, atau tunggu 5 menit bila aplikasi di perangkat itu sudah ditutup.';
+ stopSessionTimers();await db.auth.signOut({scope:'local'});user=null;profile=null;
+ showLogin(loginNotice);
+ return false;
+}
+function stopSessionTimers(){
+ if(lockTimer){clearInterval(lockTimer);lockTimer=null}
+ if(refreshTimer){clearInterval(refreshTimer);refreshTimer=null}
+ if(realtimeChannel){db.removeChannel(realtimeChannel);realtimeChannel=null}
+}
+async function heartbeat(){
+ if(!user||!lockEnabled)return;
+ const {data,error}=await db.rpc('heartbeat_app_session',{p_device:DEVICE_ID});
+ if(error){if(missingFn(error))lockEnabled=false;return}
+ if(data===false){
+  // Kunci diambil perangkat lain (mis. admin mengambil alih, atau perangkat ini lama tidak aktif)
+  if(user&&!(await claimLock().catch(()=>false)))stopSessionTimers();
+ }
+}
+function startLockHeartbeat(){if(lockTimer)clearInterval(lockTimer);lockTimer=setInterval(heartbeat,45000)}
+async function releaseLock(){if(!lockEnabled)return;try{await db.rpc('release_app_session',{p_device:DEVICE_ID})}catch(e){}}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')heartbeat()});
+window.addEventListener('pageshow',e=>{if(e.persisted)heartbeat()});
+// Tutup tab / browser: lepaskan kunci agar orang lain bisa langsung masuk.
+window.addEventListener('pagehide',()=>{
+ if(!user||!lockEnabled||!accessToken)return;
+ try{fetch(URL+'/rest/v1/rpc/release_app_session',{method:'POST',keepalive:true,headers:{apikey:KEY,Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},body:JSON.stringify({p_device:DEVICE_ID})})}catch(e){}
+});
 async function sessionStart(){
  const {data:{session},error}=await db.auth.getSession();if(error)throw error;
  if(!session){showLogin();return}
- user=session.user;
+ user=session.user;accessToken=session.access_token||'';
  const {data:p,error:pe}=await db.from('user_profiles').select('display_name,role').eq('id',user.id).single();
  if(pe)throw pe;profile=p;
+ if(!(await claimLock()))return;
+ startLockHeartbeat();
  $('loginScreen').style.display='none';$('app').classList.remove('hidden');
  setText('userBadge',(p.display_name||user.email)+' · '+p.role.toUpperCase());
  $('importExcel').disabled=!admin();$('importExcel').title=admin()?'':'Khusus Admin';
@@ -561,9 +609,9 @@ $('dashEnter').addEventListener('click',()=>{syncDashFilters();drawDash()});$('r
  $('dashEnd').onchange=()=>{$('dashPreset').value='custom';syncDashFilters();drawDash()};
  $('dashMonth').onchange=()=>{if($('dashMonth').value)$('dashPreset').value='month';syncDashFilters();drawDash()};
  $('dashYear').onchange=()=>{if($('dashYear').value)$('dashPreset').value='year';syncDashFilters();drawDash()};
-$('loginForm').onsubmit=async e=>{e.preventDefault();$('loginButton').disabled=true;setText('loginMessage','Sedang login...');const loginName=$('loginEmail').value.trim();const loginKey=loginName.toLowerCase();const loginEmail=loginKey==='petugas'?'petugas@sunsetvenue.local':loginKey==='belong76'?'wikansutama19@gmail.com':loginName;let {error}=await db.auth.signInWithPassword({email:loginEmail,password:$('loginPassword').value});$('loginButton').disabled=false;if(error){setText('loginMessage','Login gagal: periksa username dan password.');return}try{await sessionStart()}catch(x){showLogin('Login berhasil, tetapi aplikasi belum selesai dimuat: '+x.message)}};
-$('logoutButton').onclick=async()=>{await db.auth.signOut();user=null;profile=null;showLogin('Kamu sudah logout.')};
+$('loginForm').onsubmit=async e=>{e.preventDefault();loginNotice='';$('loginButton').disabled=true;setText('loginMessage','Sedang login...');const loginName=$('loginEmail').value.trim();const loginKey=loginName.toLowerCase();const loginEmail=loginKey==='petugas'?'petugas@sunsetvenue.local':loginKey==='belong76'?'wikansutama19@gmail.com':loginName;let {error}=await db.auth.signInWithPassword({email:loginEmail,password:$('loginPassword').value});$('loginButton').disabled=false;if(error){setText('loginMessage','Login gagal: periksa username dan password.');return}try{await sessionStart()}catch(x){showLogin('Login berhasil, tetapi aplikasi belum selesai dimuat: '+x.message)}};
+$('logoutButton').onclick=async()=>{loginNotice='Kamu sudah logout.';stopSessionTimers();await releaseLock();await db.auth.signOut({scope:'local'});user=null;profile=null;showLogin(loginNotice)};
 $('date').value=today();$('fromDate').value=today().slice(0,7)+'-01';$('toDate').value=today();$('reportMonth').value=today().slice(0,7);$('reportYear').value=today().slice(0,4);$('reportPreset').value='all';syncReportFilters();$('dashStart').value=today().slice(0,7)+'-01';$('dashEnd').value=today();$('dashMonth').value=today().slice(0,7);$('dashYear').value=today().slice(0,4);$('dashPreset').value='all';syncDashFilters();addExpenseRow();preview();
-db.auth.onAuthStateChange((event)=>{if(event==='SIGNED_OUT')showLogin()});
+db.auth.onAuthStateChange((event,session)=>{if(session?.access_token)accessToken=session.access_token;if(event==='SIGNED_OUT'){stopSessionTimers();showLogin(loginNotice)}});
 sessionStart().catch(e=>showLogin('Aplikasi belum berhasil dimuat. Periksa koneksi dan setup database. Detail: '+e.message));
 })();

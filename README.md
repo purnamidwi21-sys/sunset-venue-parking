@@ -88,3 +88,11 @@ If historical records have no staff roster, the 50% staff pool can still be calc
 - Admin can record payment for one recipient or record all outstanding balances as paid in one action.
 - Each payment is stored with the underlying daily record, payment method, timestamp, and admin account.
 - The balance becomes Rp0 only after payment is recorded; the button does not transfer funds. Confirm it only after the money has actually been handed over or transferred.
+
+
+## Satu perangkat login dalam satu waktu
+- Hanya 1 perangkat yang bisa masuk ke aplikasi pada satu waktu (berlaku juga untuk akun yang sama di HP berbeda).
+- Orang kedua akan melihat pesan siapa yang sedang memakai aplikasi, lalu bisa masuk setelah orang pertama logout.
+- Menutup tab/browser juga melepas kunci. Bila perangkat mati atau kehilangan koneksi tanpa logout, kunci bebas setelah 5 menit tidak aktif.
+- Admin bisa mengambil alih; perangkat yang sedang masuk akan otomatis keluar.
+- Aktifkan sekali dengan menjalankan `upgrade_single_login.sql` di Supabase SQL Editor. Sebelum file ini dijalankan, aplikasi tetap bisa dipakai tanpa batasan.
