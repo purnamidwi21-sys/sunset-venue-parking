@@ -193,11 +193,6 @@ function drawReport(){
  setText('rRevenue',money(t.rev));setText('rExpenses',money(t.exp));setText('rNet',money(t.net));
  setText('rSunset',money(t.sun));setText('rAdat',money(t.adat));setText('rStaff',money(t.pool));
  $('reportRows').innerHTML=report.length?report.map(r=>{const c=calc(r);return'<tr><td>'+esc(r.date)+'</td><td class="num">'+money(r.revenue)+'</td><td class="num">'+money(r.expenses)+'</td><td class="num strong">'+money(c.net)+'</td><td class="num">'+money(c.sunset)+'</td><td class="num">'+money(c.adat)+'</td><td class="num">'+money(c.pool)+'</td><td>'+esc(r.staff.join(', '))+'</td></tr>'}).join(''):'<tr><td colspan="8" class="empty">Tidak ada data pada periode ini.</td></tr>';
- const dailyStaffLines=report.flatMap(r=>{const c=calc(r);return(r.staff||[]).filter(n=>!selectedStaff||n===selectedStaff).map(name=>({date:r.date,name,amount:c.each}))}).sort((a,b)=>a.date.localeCompare(b.date)||STAFF.indexOf(a.name)-STAFF.indexOf(b.name));
- $('reportDailyStaffRows').innerHTML=dailyStaffLines.length?dailyStaffLines.map(x=>'<tr><td>'+esc(x.date)+'</td><td>'+esc(x.name)+'</td><td class="num">'+money(x.amount)+'</td></tr>').join(''):'<tr><td colspan="3" class="empty">Tidak ada data petugas pada periode ini.</td></tr>';
- const settlements=settlementRows(report),totalDue=settlements.reduce((s,x)=>s+x.due,0),totalPaid=settlements.reduce((s,x)=>s+x.paid,0),balance=settlements.reduce((s,x)=>s+Math.max(0,x.balance),0);
- $('reportSettlementRows').innerHTML=settlements.length?settlements.map(x=>'<tr><td>'+esc(x.name)+'</td><td class="num">'+money(x.due)+'</td><td class="num">'+money(x.paid)+'</td><td class="num">'+money(Math.max(0,x.balance))+'</td></tr>').join(''):'<tr><td colspan="4" class="empty">Belum ada rincian pembayaran.</td></tr>';
- $('reportSettlementFoot').innerHTML='<tr><th>TOTAL</th><th class="num">'+money(totalDue)+'</th><th class="num">'+money(totalPaid)+'</th><th class="num">'+money(balance)+'</th></tr>';
  const summaries=staffEarnings(report).filter(x=>!selectedStaff||x.name===selectedStaff);
  $('reportStaffSummaryRows').innerHTML=summaries.length?summaries.map(x=>'<tr><td>'+esc(x.name)+'</td><td class="num">'+x.days+'</td><td class="num strong">'+money(x.amount)+'</td></tr>').join(''):'<tr><td colspan="3" class="empty">Tidak ada data petugas pada periode ini.</td></tr>';
 }
