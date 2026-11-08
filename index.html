@@ -317,7 +317,60 @@ button{font-size:16px;min-height:46px}
 </div>
 <div class="panel" style="padding:0;border:0"><div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>Revenue</th><th>Pengeluaran</th><th>Net</th><th>Sunset 25%</th><th>Adat 25%</th><th>Petugas 50%</th><th>Petugas bertugas</th></tr></thead><tbody id="reportRows"></tbody></table></div></div>
 <div class="toolbar report-staff-toolbar" style="margin-top:15px"><div class="field report-staff-field"><label>Petugas Parkir</label><select id="reportStaffFilter"><option value="">Semua petugas</option><option>Pak Manik</option><option>Pak Bayu</option><option>Pak Ganes</option><option>Pak Gangga</option><option>Pak Riki</option><option>Pak Dilan</option><option>Pak Dek Putra</option></select></div></div>
-<div class="panel" style="margin-top:15px"><h2>Rincian pendapatan petugas parkir</h2><div class="tablewrap"><table style="min-width:520px"><thead><tr><th>Tanggal</th><th>Petugas</th><th>Pendapatan petugas</th></tr></thead><tbody id="reportDailyStaffRows"></tbody></table></div></div>
+
+<div class="panel" style="margin-top:15px">
+  <h2>Ringkasan Keuangan</h2>
+  <div class="shares">
+    <div class="share"><span>Total Revenue</span><strong id="rRevenue">Rp0</strong></div>
+    <div class="share"><span>Total Pengeluaran</span><strong id="rExpenses">Rp0</strong></div>
+    <div class="share"><span>Net Revenue</span><strong id="rNet">Rp0</strong></div>
+  </div>
+</div>
+
+<div class="panel" style="margin-top:15px">
+  <h2>Rekap Pembagian Hasil</h2>
+  <div class="shares">
+    <div class="share"><span>Sunset Venue · 25%</span><strong id="rSunset">Rp0</strong></div>
+    <div class="share"><span>Banjar Adat · 25%</span><strong id="rAdat">Rp0</strong></div>
+    <div class="share"><span>Petugas · 50%</span><strong id="rStaff">Rp0</strong></div>
+  </div>
+</div>
+
+<div class="panel" style="margin-top:15px">
+  <h2>Rekap Hak dan Pembayaran</h2>
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Penerima</th>
+          <th>Hak Pembagian</th>
+          <th>Sudah Dibayar</th>
+          <th>Belum Dibayar</th>
+        </tr>
+      </thead>
+      <tbody id="reportSettlementRows"></tbody>
+      <tfoot id="reportSettlementFoot"></tfoot>
+    </table>
+  </div>
+</div>
+
+<div class="panel" style="margin-top:15px">
+  <h2>Rekap Pendapatan Petugas</h2>
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Petugas</th>
+          <th>Hari Bertugas</th>
+          <th>Total Hak Pembagian</th>
+        </tr>
+      </thead>
+      <tbody id="reportStaffSummaryRows"></tbody>
+    </table>
+  </div>
+</div>
+
+ <div class="panel" style="margin-top:15px"><h2>Rincian pendapatan petugas parkir</h2><div class="tablewrap"><table style="min-width:520px"><thead><tr><th>Tanggal</th><th>Petugas</th><th>Pendapatan petugas</th></tr></thead><tbody id="reportDailyStaffRows"></tbody></table></div></div>
 </div>
 </section>
 <section id="history" class="section">
